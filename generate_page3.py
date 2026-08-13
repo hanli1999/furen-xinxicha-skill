@@ -227,8 +227,8 @@ def main():
     row2_n = n_cards - row1_n
     row1_w = (cx1 - cx0 - card_gap * (row1_n - 1)) / row1_n
     row2_w = (cx1 - cx0 - card_gap * (row2_n - 1)) / row2_n
-    card_h = 158
-    row_gap = 10
+    card_h = 140
+    row_gap = 8
 
     for i, (indicator, threshold, std, role, color) in enumerate(SIGNAL_CARDS):
         if i < row1_n:
@@ -248,25 +248,25 @@ def main():
         # 指标名（黑体加粗·一行）
         d.text((x0 + 20, y0 + 14), indicator, font=ROW_NAME, fill=INK)
         # 阈值（筹码色·中等字）
-        d.text((x0 + 20, y0 + 56), threshold, font=TABLE_LBL, fill=color)
+        d.text((x0 + 20, y0 + 52), threshold, font=TABLE_LBL, fill=color)
         # 标准值/对比（小灰字·含对比基准）
-        d.text((x0 + 20, y0 + 92), "标准值：" + std, font=ROW_BODY, fill=INK_SOFT)
+        d.text((x0 + 20, y0 + 86), "标准值：" + std, font=ROW_BODY, fill=INK_SOFT)
         # 作用（小灰字）
-        d.text((x0 + 20, y0 + 122), "作用：" + role, font=PLAYER_SUB, fill=GRAY)
+        d.text((x0 + 20, y0 + 114), "作用：" + role, font=PLAYER_SUB, fill=GRAY)
 
     # === 撕纸分隔 3 ===
-    torn_line(d, 1090, color=GRAY_LT, sw=2)
+    torn_line(d, 1080, color=GRAY_LT, sw=2)
 
     # ============ 03 政策/产业工具全家福 ============
-    sec3_y = 1116
+    sec3_y = 1106
     d.text((margin, sec3_y), "03", font=SEC_NUM, fill=RED)
     d.text((margin + 80, sec3_y + 6), "政策工具全家福", font=SEC_NAME, fill=INK)
     d.text((margin + 80 + text_width("政策工具全家福", SEC_NAME) + 24, sec3_y + 12),
            "原标题 · 目标 · 机制 · 案例", font=SEC_DESC, fill=GRAY)
 
-    # 3 件工具箱（3 行堆叠·左右两栏·标题左·详情右）
-    tl_y0 = 1162
-    tl_row_h = 58
+    # 3 件工具箱（3 行堆叠·左右两栏·标题左·详情右·行内宽松）
+    tl_y0 = 1156
+    tl_row_h = 76
     n_tl = len(TOOL_BOX)
     tl_w = W - margin * 2
     for ti, (title, goal, mechanism, case_, color) in enumerate(TOOL_BOX):
@@ -275,27 +275,26 @@ def main():
         d.rectangle([margin, ty, margin + tl_w, ty + tl_row_h - 6], fill=LIGHT)
         # 左侧色条
         d.rectangle([margin, ty, margin + 6, ty + tl_row_h - 6], fill=color)
-        # 政策原标题（黑体·左半·单行）
-        d.text((margin + 20, ty + 4), title, font=ROW_NAME, fill=INK)
-        # 政策全称补注（小灰·副标题位）
+        # 政策原标题（黑体·左半·单行·靠上）
+        d.text((margin + 20, ty + 10), title, font=ROW_NAME, fill=INK)
+        # 政策全称补注（小灰·副标题位·与标题间隔开）
         full_names = {
             "大基金":     "国家集成电路产业投资基金",
             "首台套补贴": "首台套重大技术装备保险补偿",
             "芯片企业免税": "集成电路企业所得税减免",
         }
         if title in full_names:
-            d.text((margin + 20, ty + 34), "「" + full_names[title] + "」",
+            d.text((margin + 20, ty + 46), "「" + full_names[title] + "」",
                    font=PLAYER_SUB, fill=GRAY)
         # 分隔细线（左/右）
-        d.line([(margin + 280, ty + 4), (margin + 280, ty + tl_row_h - 10)],
+        d.line([(margin + 280, ty + 8), (margin + 280, ty + tl_row_h - 14)],
                fill=GRAY_LT, width=1)
-        # 目标 + 机制（同行·右栏上半）
-        d.text((margin + 300, ty + 4), "目标：" + goal,
+        # 目标 + 机制 + 案例（右半·三行·每行间隔开）
+        d.text((margin + 300, ty + 10), "目标：" + goal,
                font=PLAYER_SUB, fill=INK_SOFT)
-        d.text((margin + 300, ty + 20), "机制：" + mechanism,
+        d.text((margin + 300, ty + 32), "机制：" + mechanism,
                font=PLAYER_SUB, fill=INK_SOFT)
-        # 案例（独占下半行·避免与左栏副标题重叠）
-        d.text((margin + 300, ty + 36), "案例：" + case_,
+        d.text((margin + 300, ty + 54), "案例：" + case_,
                font=PLAYER_SUB, fill=GRAY)
 
     # === 底部红条 ===
