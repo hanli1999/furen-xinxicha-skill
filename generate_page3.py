@@ -99,9 +99,9 @@ def make_paper_bg(skeleton_path):
 
 # 顶部标题
 TITLE    = "富人认知加油包"
-SUBTITLE = "1 张图看懂存储芯片产业链"
+SUBTITLE = "看产业新闻的 5 个关键数字 + 政策工具表"
 
-# 01 产业链 5 大环节：编号 + 名称 + 描述 + 筹码颜色
+# 01 产业链/逻辑链 5 大环节（保留·已是干货骨架）
 CHAIN = [
     ("1", "设备", "光刻 / 刻蚀 / 薄膜沉积", YELLOW),
     ("2", "材料", "硅片 / 光刻胶 / 电子气体", GREEN),
@@ -110,37 +110,32 @@ CHAIN = [
     ("5", "封测", "封装 / 测试",             BLUE),
 ]
 
-# 02 全球供给格局：3 张统计卡片（加深：加 详解 + 关键对比）
-# 合规要求：纯市场份额/集中度/应用场景拆分数据，无任何公司名
-SHARE_CARDS = [
-    # (大数字, 单位, 标签, 副说明, 详解, 筹码色)
-    ("85", "%", "TOP3 海外集中度 2019", "三家海外合计 85%",
-     "6 年下降 25 个百分点",          BLUE),
-    ("60", "%", "TOP3 海外集中度 2025E", "国产入局后下行",
-     "NAND 集中度 < DRAM 80%",        RED),
-    ("14", "%", "国产 NAND 份额 2025E", "从 0 到 14% 用 7 年",
-     "出货占比 > 营收占比",           GREEN),
+# 02 关键数字怎么读：5 张速查卡（高于/低于 多少 = 什么信号）
+# 设计：每个数字 = 一句话就能用的判断标尺，下次看到新闻直接套
+# 收藏价值：工具表型·跨场景复用
+SIGNAL_CARDS = [
+    # (判断阈值, 信号含义, 适用场景, 筹码色)
+    ("集中度 > 70%", "寡头格局·易被卡脖子",  "看供应链新闻",     BLUE),
+    ("国产份额 > 10%", "规模替代拐点",        "看替代进度",      GREEN),
+    ("良率 < 80%",   "量产爬坡未完成",        "看产能新闻",       RED),
+    ("资本开支同比 > 30%", "行业进入扩产",   "看行业景气",       PINK),
+    ("价格连降 3 月",  "库存出清信号",        "看价格走势",       YELLOW),
 ]
 
-# 03 国产替代四阶段时间表：每阶段加「国产份额」+「卡点」双行干货
-# 合规要求：行业级数据 + 技术卡点，不点名公司
-TIMELINE = [
-    # (时间段, 阶段名, 国产份额, 关键事件, 阶段卡点, 筹码色)
-    ("2014-2017", "技术启动期", "份额 < 1%",
-     "国家大基金成立 · 设备引进",      "设备禁运·工艺空白",  YELLOW),
-    ("2018-2020", "量产爬坡期", "份额 3-5%",
-     "32 层 3D NAND 量产·良率爬升",    "良率与海外差 30pp",  GREEN),
-    ("2021-2023", "客户验证期", "份额 8-10%",
-     "进入旗舰手机供应链",            "客户认证周期长",     PINK),
-    ("2024+",     "规模替代期", "份额 14%+",
-     "全球第三·突破 10% 关口",        "高端制程仍受限",     RED),
+# 03 政策/产业工具全家福：3 件套（工具 + 用途 + 历史案例）
+# 设计：工具名 + 一句话用途 + 跨主题可换
+TOOL_BOX = [
+    # (工具名, 用途, 案例, 筹码色)
+    ("国家大基金",     "资本注入·撬动研发",  "2014 年成立 · 千亿规模",  BLUE),
+    ("首台套补贴",     "采购倾斜·国产替代",  "国产设备首单补贴 15-30%", RED),
+    ("税收减免",       "制造端成本优势",     "集成电路企业 5 免 5 减半", YELLOW),
 ]
 
 # 04 数据源（一行紧凑文字）
 DATA_SOURCES = "TrendForce · DRAMeXchange · 集邦咨询 · 财联社"
 
 # 底部 CTA
-FOOTER = "★ 建议收藏  ·  产业链结构 3 年不过时"
+FOOTER = "★ 建议收藏  ·  数字工具表 3 年不过时"
 
 # 可选：纸感底纹（None 或路径）
 PAPER_BG = None  # 如要用 AI 骨架底纹，设为 "path/to/page3_skeleton.jpg"
@@ -203,91 +198,83 @@ def main():
     # === 撕纸分隔 2 ===
     torn_line(d, 670, color=GRAY_LT, sw=2)
 
-    # ============ 02 全球供给格局 ============
+    # ============ 02 关键数字怎么读（5 张速查卡） ============
     sec2_y = 700
     d.text((margin, sec2_y), "02", font=SEC_NUM, fill=RED)
-    d.text((margin + 80, sec2_y + 6), "全球供给格局", font=SEC_NAME, fill=INK)
-    d.text((margin + 80 + text_width("全球供给格局", SEC_NAME) + 24, sec2_y + 12),
-           "集中度持续下行", font=SEC_DESC, fill=GRAY)
+    d.text((margin + 80, sec2_y + 6), "关键数字怎么读", font=SEC_NAME, fill=INK)
+    d.text((margin + 80 + text_width("关键数字怎么读", SEC_NAME) + 24, sec2_y + 12),
+           "下次看新闻直接套", font=SEC_DESC, fill=GRAY)
 
-    # 3 张统计卡片（加深：5 行内容）
+    # 5 张速查卡（上 2 下 3 排布，避免横向太挤）
     cx0 = margin
     cx1 = W - margin
     cy0 = 770
-    card_gap = 16
-    n_cards = len(SHARE_CARDS)
-    card_w = (cx1 - cx0 - card_gap * (n_cards - 1)) / n_cards
-    card_h = 268
-    for ci, (big, unit, label, sub, detail, color) in enumerate(SHARE_CARDS):
-        x0 = cx0 + ci * (card_w + card_gap)
-        x1 = x0 + card_w
+    card_gap = 14
+    n_cards = len(SIGNAL_CARDS)
+    # 第一行 2 张，第二行 3 张
+    row1_n = 2
+    row2_n = n_cards - row1_n
+    row1_w = (cx1 - cx0 - card_gap * (row1_n - 1)) / row1_n
+    row2_w = (cx1 - cx0 - card_gap * (row2_n - 1)) / row2_n
+    card_h = 116
+    row_gap = 10
+
+    for i, (threshold, signal, scenario, color) in enumerate(SIGNAL_CARDS):
+        if i < row1_n:
+            x0 = cx0 + i * (row1_w + card_gap)
+            x1 = x0 + row1_w
+            y0 = cy0
+        else:
+            idx = i - row1_n
+            x0 = cx0 + idx * (row2_w + card_gap)
+            x1 = x0 + row2_w
+            y0 = cy0 + card_h + row_gap
+        y1 = y0 + card_h
         # 卡片底
-        d.rectangle([x0, cy0, x1, cy0 + card_h], fill=LIGHT)
-        # 顶部色条
-        d.rectangle([x0, cy0, x1, cy0 + 8], fill=color)
-        # 大数字（hero）+ 单位
-        big_text = big + unit
-        bb = d.textbbox((0, 0), big_text, font=TABLE_HERO)
-        bw = bb[2] - bb[0]
-        bh = bb[3] - bb[1]
-        d.text((x0 + (card_w - bw) / 2, cy0 + 36),
-               big_text, font=TABLE_HERO, fill=INK)
-        # 标签（小标题）
-        bb = d.textbbox((0, 0), label, font=TABLE_LBL)
-        lw = bb[2] - bb[0]
-        d.text((x0 + (card_w - lw) / 2, cy0 + 122),
-               label, font=TABLE_LBL, fill=INK)
-        # 副说明
-        bb = d.textbbox((0, 0), sub, font=PLAYER_SUB)
-        sw = bb[2] - bb[0]
-        d.text((x0 + (card_w - sw) / 2, cy0 + 168),
-               sub, font=PLAYER_SUB, fill=GRAY)
-        # 详解（最后一层干货）
-        bb = d.textbbox((0, 0), detail, font=ROW_BODY)
-        dw = bb[2] - bb[0]
-        d.text((x0 + (card_w - dw) / 2, cy0 + 210),
-               detail, font=ROW_BODY, fill=INK_SOFT)
+        d.rectangle([x0, y0, x1, y1], fill=LIGHT)
+        # 左侧色条
+        d.rectangle([x0, y0, x0 + 6, y1], fill=color)
+        # 阈值（大字 hero·黑体）
+        bb = d.textbbox((0, 0), threshold, font=TABLE_LBL)
+        tw = bb[2] - bb[0]
+        d.text((x0 + 20, y0 + 18), threshold, font=TABLE_LBL, fill=INK)
+        # 信号含义（中等字·筹码色）
+        bb = d.textbbox((0, 0), signal, font=ROW_BODY)
+        sw_ = bb[2] - bb[0]
+        d.text((x0 + 20, y0 + 60), signal, font=ROW_BODY, fill=color)
+        # 适用场景（小灰字）
+        d.text((x0 + 20, y0 + 92), "→ " + scenario, font=PLAYER_SUB, fill=GRAY)
 
     # === 撕纸分隔 3 ===
-    torn_line(d, 1064, color=GRAY_LT, sw=2)
+    torn_line(d, 1060, color=GRAY_LT, sw=2)
 
-    # ============ 03 国产替代四阶段时间表 ============
-    sec3_y = 1090
+    # ============ 03 政策/产业工具全家福 ============
+    sec3_y = 1086
     d.text((margin, sec3_y), "03", font=SEC_NUM, fill=RED)
-    d.text((margin + 80, sec3_y + 6), "国产替代四阶段", font=SEC_NAME, fill=INK)
-    d.text((margin + 80 + text_width("国产替代四阶段", SEC_NAME) + 24, sec3_y + 12),
-           "从技术启动到规模替代", font=SEC_DESC, fill=GRAY)
+    d.text((margin + 80, sec3_y + 6), "政策工具全家福", font=SEC_NAME, fill=INK)
+    d.text((margin + 80 + text_width("政策工具全家福", SEC_NAME) + 24, sec3_y + 12),
+           "3 件套速查", font=SEC_DESC, fill=GRAY)
 
-    # 4 段时间轴（每阶段 6 行干货：阶段名 + 份额 + 事件 + 卡点）
-    tl_y0 = 1166
-    tl_h = 154
-    n_tl = len(TIMELINE)
-    tl_card_w = (W - margin * 2 - card_gap * (n_tl - 1)) / n_tl
-    for ti, (period, phase, share, event, chokepoint, color) in enumerate(TIMELINE):
-        tx0 = margin + ti * (tl_card_w + card_gap)
-        tx1 = tx0 + tl_card_w
-        # 卡片底
-        d.rectangle([tx0, tl_y0, tx1, tl_y0 + tl_h], fill=LIGHT)
+    # 3 件工具箱（3 行堆叠·文字主导）
+    tl_y0 = 1158
+    tl_row_h = 70
+    n_tl = len(TOOL_BOX)
+    tl_w = W - margin * 2
+    for ti, (tool, use, history, color) in enumerate(TOOL_BOX):
+        ty = tl_y0 + ti * tl_row_h
+        # 行底（极浅）
+        d.rectangle([margin, ty, margin + tl_w, ty + tl_row_h - 6], fill=LIGHT)
         # 左侧色条
-        d.rectangle([tx0, tl_y0, tx0 + 6, tl_y0 + tl_h], fill=color)
-        # 阶段编号（顶部圆形）
-        phase_num = str(ti + 1)
-        chip(d, tx0 + 30, tl_y0 + 22, 16, color, outline=INK, sw=2)
-        nb = d.textbbox((0, 0), phase_num, font=TABLE_MARK)
-        nw, nh = nb[2] - nb[0], nb[3] - nb[1]
-        d.text((tx0 + 30 - nw // 2, tl_y0 + 22 - nh // 2 - 2),
-               phase_num, font=TABLE_MARK, fill=INK)
-        # 时间段（小灰字）
-        d.text((tx0 + 56, tl_y0 + 12), period, font=PLAYER_SUB, fill=GRAY)
-        # 阶段名 + 份额（黑体）
-        d.text((tx0 + 14, tl_y0 + 46), phase, font=TIER_NAME, fill=INK)
-        # 国产份额（小字、筹码色）
-        d.text((tx0 + 14, tl_y0 + 74), share, font=PLAYER_SUB, fill=color)
-        # 关键事件
-        d.text((tx0 + 14, tl_y0 + 100), event, font=ROW_BODY, fill=INK)
-        # 阶段卡点（最后一层）
-        d.text((tx0 + 14, tl_y0 + 126), "卡点：" + chokepoint,
-               font=ROW_BODY, fill=INK_SOFT)
+        d.rectangle([margin, ty, margin + 6, ty + tl_row_h - 6], fill=color)
+        # 工具名（黑体加粗）
+        d.text((margin + 20, ty + 4), tool, font=ROW_NAME, fill=INK)
+        # 用途（中等字·同行右侧）
+        bb = d.textbbox((0, 0), tool, font=ROW_NAME)
+        tw = bb[2] - bb[0]
+        d.text((margin + 20 + tw + 18, ty + 8), "· " + use, font=ROW_BODY, fill=INK_SOFT)
+        # 历史案例（小灰字·下一行）
+        d.text((margin + 20, ty + 32), "案例：" + history,
+               font=PLAYER_SUB, fill=GRAY)
 
     # === 撕纸分隔 4 ===
     torn_line(d, 1342, color=GRAY_LT, sw=2)
