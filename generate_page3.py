@@ -110,23 +110,30 @@ CHAIN = [
     ("5", "封测", "封装 / 测试",             BLUE),
 ]
 
-# 02 全球供给格局：3 张统计卡片（不点名公司，只描述行业结构）
+# 02 全球供给格局：3 张统计卡片（加深：加 详解 + 关键对比）
 # 合规要求：纯市场份额/集中度/应用场景拆分数据，无任何公司名
 SHARE_CARDS = [
-    # (大数字, 单位, 标签, 副说明, 筹码色)
-    ("85", "%",  "TOP3 海外集中度 2019",  "三家海外合计份额",   BLUE),
-    ("60", "%",  "TOP3 海外集中度 2025E", "国产入局后下行",     RED),
-    ("14", "%",  "国产份额 2025E",        "从 0 到 14% 七年",  GREEN),
+    # (大数字, 单位, 标签, 副说明, 详解, 筹码色)
+    ("85", "%", "TOP3 海外集中度 2019", "三家海外合计 85%",
+     "6 年下降 25 个百分点",          BLUE),
+    ("60", "%", "TOP3 海外集中度 2025E", "国产入局后下行",
+     "NAND 集中度 < DRAM 80%",        RED),
+    ("14", "%", "国产 NAND 份额 2025E", "从 0 到 14% 用 7 年",
+     "出货占比 > 营收占比",           GREEN),
 ]
 
-# 03 国产替代四阶段时间表：行业里程碑，不点名公司
-# 合规要求：每阶段描述行业级事件（基金成立/量产/客户验证/规模替代），无任何公司名
+# 03 国产替代四阶段时间表：每阶段加「国产份额」+「卡点」双行干货
+# 合规要求：行业级数据 + 技术卡点，不点名公司
 TIMELINE = [
-    # (时间段, 阶段名, 关键事件, 筹码色)
-    ("2014-2017", "技术启动期", "国家大基金成立 · 设备引进",      YELLOW),
-    ("2018-2020", "量产爬坡期", "32 层 3D NAND 量产 · 良率爬升",  GREEN),
-    ("2021-2023", "客户验证期", "进入旗舰手机供应链",            PINK),
-    ("2024+",     "规模替代期", "全球份额突破 10% 关口",         RED),
+    # (时间段, 阶段名, 国产份额, 关键事件, 阶段卡点, 筹码色)
+    ("2014-2017", "技术启动期", "份额 < 1%",
+     "国家大基金成立 · 设备引进",      "设备禁运·工艺空白",  YELLOW),
+    ("2018-2020", "量产爬坡期", "份额 3-5%",
+     "32 层 3D NAND 量产·良率爬升",    "良率与海外差 30pp",  GREEN),
+    ("2021-2023", "客户验证期", "份额 8-10%",
+     "进入旗舰手机供应链",            "客户认证周期长",     PINK),
+    ("2024+",     "规模替代期", "份额 14%+",
+     "全球第三·突破 10% 关口",        "高端制程仍受限",     RED),
 ]
 
 # 04 数据源（一行紧凑文字）
@@ -203,18 +210,18 @@ def main():
     d.text((margin + 80 + text_width("全球供给格局", SEC_NAME) + 24, sec2_y + 12),
            "集中度持续下行", font=SEC_DESC, fill=GRAY)
 
-    # 3 张统计卡片
+    # 3 张统计卡片（加深：5 行内容）
     cx0 = margin
     cx1 = W - margin
-    cy0 = 778
+    cy0 = 770
     card_gap = 16
     n_cards = len(SHARE_CARDS)
     card_w = (cx1 - cx0 - card_gap * (n_cards - 1)) / n_cards
-    card_h = 240
-    for ci, (big, unit, label, sub, color) in enumerate(SHARE_CARDS):
+    card_h = 268
+    for ci, (big, unit, label, sub, detail, color) in enumerate(SHARE_CARDS):
         x0 = cx0 + ci * (card_w + card_gap)
         x1 = x0 + card_w
-        # 卡片底（极浅底色）
+        # 卡片底
         d.rectangle([x0, cy0, x1, cy0 + card_h], fill=LIGHT)
         # 顶部色条
         d.rectangle([x0, cy0, x1, cy0 + 8], fill=color)
@@ -223,35 +230,40 @@ def main():
         bb = d.textbbox((0, 0), big_text, font=TABLE_HERO)
         bw = bb[2] - bb[0]
         bh = bb[3] - bb[1]
-        d.text((x0 + (card_w - bw) / 2, cy0 + 50),
+        d.text((x0 + (card_w - bw) / 2, cy0 + 36),
                big_text, font=TABLE_HERO, fill=INK)
         # 标签（小标题）
         bb = d.textbbox((0, 0), label, font=TABLE_LBL)
         lw = bb[2] - bb[0]
-        d.text((x0 + (card_w - lw) / 2, cy0 + 130),
+        d.text((x0 + (card_w - lw) / 2, cy0 + 122),
                label, font=TABLE_LBL, fill=INK)
         # 副说明
         bb = d.textbbox((0, 0), sub, font=PLAYER_SUB)
         sw = bb[2] - bb[0]
-        d.text((x0 + (card_w - sw) / 2, cy0 + 175),
+        d.text((x0 + (card_w - sw) / 2, cy0 + 168),
                sub, font=PLAYER_SUB, fill=GRAY)
+        # 详解（最后一层干货）
+        bb = d.textbbox((0, 0), detail, font=ROW_BODY)
+        dw = bb[2] - bb[0]
+        d.text((x0 + (card_w - dw) / 2, cy0 + 210),
+               detail, font=ROW_BODY, fill=INK_SOFT)
 
     # === 撕纸分隔 3 ===
-    torn_line(d, 1050, color=GRAY_LT, sw=2)
+    torn_line(d, 1064, color=GRAY_LT, sw=2)
 
     # ============ 03 国产替代四阶段时间表 ============
-    sec3_y = 1080
+    sec3_y = 1090
     d.text((margin, sec3_y), "03", font=SEC_NUM, fill=RED)
     d.text((margin + 80, sec3_y + 6), "国产替代四阶段", font=SEC_NAME, fill=INK)
     d.text((margin + 80 + text_width("国产替代四阶段", SEC_NAME) + 24, sec3_y + 12),
            "从技术启动到规模替代", font=SEC_DESC, fill=GRAY)
 
-    # 4 段时间轴
-    tl_y0 = 1156
-    tl_h = 174
+    # 4 段时间轴（每阶段 6 行干货：阶段名 + 份额 + 事件 + 卡点）
+    tl_y0 = 1166
+    tl_h = 154
     n_tl = len(TIMELINE)
     tl_card_w = (W - margin * 2 - card_gap * (n_tl - 1)) / n_tl
-    for ti, (period, phase, event, color) in enumerate(TIMELINE):
+    for ti, (period, phase, share, event, chokepoint, color) in enumerate(TIMELINE):
         tx0 = margin + ti * (tl_card_w + card_gap)
         tx1 = tx0 + tl_card_w
         # 卡片底
@@ -260,31 +272,22 @@ def main():
         d.rectangle([tx0, tl_y0, tx0 + 6, tl_y0 + tl_h], fill=color)
         # 阶段编号（顶部圆形）
         phase_num = str(ti + 1)
-        chip(d, tx0 + 30, tl_y0 + 24, 16, color, outline=INK, sw=2)
+        chip(d, tx0 + 30, tl_y0 + 22, 16, color, outline=INK, sw=2)
         nb = d.textbbox((0, 0), phase_num, font=TABLE_MARK)
         nw, nh = nb[2] - nb[0], nb[3] - nb[1]
-        d.text((tx0 + 30 - nw // 2, tl_y0 + 24 - nh // 2 - 2),
+        d.text((tx0 + 30 - nw // 2, tl_y0 + 22 - nh // 2 - 2),
                phase_num, font=TABLE_MARK, fill=INK)
         # 时间段（小灰字）
         d.text((tx0 + 56, tl_y0 + 12), period, font=PLAYER_SUB, fill=GRAY)
-        # 阶段名（黑体大字）
-        d.text((tx0 + 14, tl_y0 + 56), phase, font=TIER_NAME, fill=INK)
-        # 关键事件（描述文字）
-        # 自动换行：按 char 拆
-        max_w = tl_card_w - 28
-        lines, cur = [], ""
-        for ch in event:
-            test = cur + ch
-            if PLAYER_SUB.getbbox(test)[2] - PLAYER_SUB.getbbox(test)[0] <= max_w:
-                cur = test
-            else:
-                if cur:
-                    lines.append(cur)
-                cur = ch
-        if cur:
-            lines.append(cur)
-        for li, line in enumerate(lines):
-            d.text((tx0 + 14, tl_y0 + 96 + li * 26), line, font=PLAYER_SUB, fill=INK_SOFT)
+        # 阶段名 + 份额（黑体）
+        d.text((tx0 + 14, tl_y0 + 46), phase, font=TIER_NAME, fill=INK)
+        # 国产份额（小字、筹码色）
+        d.text((tx0 + 14, tl_y0 + 74), share, font=PLAYER_SUB, fill=color)
+        # 关键事件
+        d.text((tx0 + 14, tl_y0 + 100), event, font=ROW_BODY, fill=INK)
+        # 阶段卡点（最后一层）
+        d.text((tx0 + 14, tl_y0 + 126), "卡点：" + chokepoint,
+               font=ROW_BODY, fill=INK_SOFT)
 
     # === 撕纸分隔 4 ===
     torn_line(d, 1342, color=GRAY_LT, sw=2)
