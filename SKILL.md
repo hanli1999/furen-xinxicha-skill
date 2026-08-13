@@ -66,11 +66,10 @@ page3 是「认知加油包」——满满干货与表格,目的**提升收藏�
 | **产业地图** | 涉及区域/集群 | 大湾区外贸 → 9 市外贸排名与产业分工 |
 | **工具/政策拆解** | 涉及工具/政策 | 隔夜逆回购 → 央行短端工具全家福 |
 
-**4 段标准结构**（工具表型·不点名公司·收藏向）：
+**3 段标准结构**（工具表型·不点名公司·收藏向）：
 1. **01 产业链/逻辑链** —— 5 个环节 · 文字行 + 小编号
-2. **02 关键数字怎么读** —— 5 张速查卡 · 阈值+信号+场景 · 一眼即用
-3. **03 政策工具全家福** —— 3 件套速查 · 工具名+用途+历史案例
-4. **04 数据源** —— 4 个权威数据出处
+2. **02 关键数字怎么读** —— 5 张速查卡 · 每卡含「指标名 + 阈值 + 标准值 + 作用」
+3. **03 政策工具全家福** —— 3 件套速查 · 每条含「政策简称 + 全称注解 + 目标 + 机制 + 案例」
 
 ---
 
@@ -86,7 +85,7 @@ cp "D:/盛喜工效/skills/富人信息差/template_v2.py"     "D:/盛喜工效/
 cp "D:/盛喜工效/skills/富人信息差/template_page3.py"  "D:/盛喜工效/华鑫/YYYYMMDD_富人信息差/generate_page3.py"
 
 # 3. 改 3 处(v1/v2):BASE_DIR · NEWS 数据 · DATE
-# 改 6 处(page3):BASE_DIR · TITLE · SUBTITLE · CHAIN · SIGNAL_CARDS · TOOL_BOX · DATA_SOURCES · FOOTER
+# 改 6 处(page3):BASE_DIR · TITLE · SUBTITLE · CHAIN · SIGNAL_CARDS · TOOL_BOX · FOOTER
 
 # 4. 渲染
 cd "D:/盛喜工效/华鑫/YYYYMMDD_富人信息差"
@@ -94,7 +93,7 @@ PYTHONIOENCODING=utf-8 /d/.venvs/ai-audio/Scripts/python.exe generate.py        
 PYTHONIOENCODING=utf-8 /d/.venvs/ai-audio/Scripts/python.exe generate_v2.py     # v2
 PYTHONIOENCODING=utf-8 /d/.venvs/ai-audio/Scripts/python.exe generate_page3.py  # page3
 
-# 5. 验收:1080×1440 · page1 4条 · page2 3条 · page3 4段 · 文字主导 · v1+v2 各 ≤220KB · page3 ≤250KB
+# 5. 验收:1080×1440 · page1 4条 · page2 3条 · page3 3段 · 文字主导 · v1+v2 各 ≤220KB · page3 ≤250KB
 ```
 
 ---

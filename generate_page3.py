@@ -99,7 +99,7 @@ def make_paper_bg(skeleton_path):
 
 # 顶部标题
 TITLE    = "富人认知加油包"
-SUBTITLE = "记住这 5 个数字 + 3 个工具·看新闻不慌"
+SUBTITLE = "5 个关键指标 + 3 个政策工具·速查手册"
 
 # 01 产业链/逻辑链 5 大环节（保留·已是干货骨架）
 CHAIN = [
@@ -110,25 +110,36 @@ CHAIN = [
     ("5", "封测", "封装 / 测试",             BLUE),
 ]
 
-# 02 关键数字怎么读：5 张速查卡（高于/低于 多少 = 什么信号）
-# 设计：每个数字 = 一句话就能用的判断标尺，下次看到新闻直接套
+# 02 关键数字怎么读：5 张速查卡（指标名 + 阈值 + 业内标准 + 作用）
+# 设计：每个数字 = 指标名 + 阈值 + 标准值 + 作用，下次看到新闻直接套
 # 收藏价值：工具表型·跨场景复用
 SIGNAL_CARDS = [
-    # (判断阈值, 信号含义, 适用场景, 筹码色)
-    ("3 家里占 7 成",   "容易被人卡脖子",        "看到产能新闻",     BLUE),
-    ("国产过了 1 成",  "开始能跟海外掰手腕",     "看到替代新闻",     GREEN),
-    ("良率不到 8 成",  "还在爬坡·别高兴太早",   "看到工厂新闻",     RED),
-    ("砸钱多了 3 成",  "大家都在抢着扩产",       "看到投资新闻",     PINK),
-    ("连跌 3 个月",    "库存清完·价格要反弹",   "看到降价新闻",     YELLOW),
+    # (指标名, 阈值, 标准值/对比, 作用, 筹码色)
+    ("市场集中度",     "TOP3 > 70%",   "国际警戒线 75%", "测供应链垄断程度",         BLUE),
+    ("国产化率",      "突破 10%",     "替代拐点门槛",    "测国产替代进度",           GREEN),
+    ("量产良率",      "< 80%",        "盈利线 85%",      "测产能爬坡成熟度",         RED),
+    ("资本开支增速",  "同比 > 30%",   "周期顶 50%",      "测行业扩产热度",           PINK),
+    ("价格走势",      "连降 3 个月",   "反转信号",        "测库存出清/反弹时机",      YELLOW),
 ]
 
-# 03 政策/产业工具全家福：3 件套（工具 + 用途 + 历史案例）
-# 设计：工具名 + 一句话用途 + 跨主题可换
+# 03 政策/产业工具全家福：3 件套（政策原标题 + 目标 + 机制 + 案例）
 TOOL_BOX = [
-    # (工具名, 用途, 案例, 筹码色)
-    ("国家出钱投",     "国家带头砸钱给企业",     "半导体大基金·千亿",   BLUE),
-    ("买东西给补贴",  "政府带头用国产货",       "国产设备补贴 15-30%", RED),
-    ("少收企业税",     "让企业少交税多研发",     "芯片企业 5 年免税",   YELLOW),
+    # (政策原标题, 目标, 机制, 案例, 筹码色)
+    ("大基金",
+                              "扶持本土半导体",
+                              "国家出钱当股东",
+                              "2014 年·一期 1387 亿",
+                              BLUE),
+    ("首台套补贴",
+                              "鼓励用国产设备",
+                              "用国产出事国家赔",
+                              "补贴保费 80%",
+                              RED),
+    ("芯片企业免税",
+                              "降低芯片厂税负",
+                              "赚钱前 5 年免税",
+                              "5 免 5 减半",
+                              YELLOW),
 ]
 
 # 04 数据源（一行紧凑文字）
@@ -203,7 +214,7 @@ def main():
     d.text((margin, sec2_y), "02", font=SEC_NUM, fill=RED)
     d.text((margin + 80, sec2_y + 6), "关键数字怎么读", font=SEC_NAME, fill=INK)
     d.text((margin + 80 + text_width("关键数字怎么读", SEC_NAME) + 24, sec2_y + 12),
-           "看到这些数·就要警觉", font=SEC_DESC, fill=GRAY)
+           "指标名 · 阈值 · 标准值 · 作用", font=SEC_DESC, fill=GRAY)
 
     # 5 张速查卡（上 2 下 3 排布，避免横向太挤）
     cx0 = margin
@@ -216,10 +227,10 @@ def main():
     row2_n = n_cards - row1_n
     row1_w = (cx1 - cx0 - card_gap * (row1_n - 1)) / row1_n
     row2_w = (cx1 - cx0 - card_gap * (row2_n - 1)) / row2_n
-    card_h = 116
+    card_h = 158
     row_gap = 10
 
-    for i, (threshold, signal, scenario, color) in enumerate(SIGNAL_CARDS):
+    for i, (indicator, threshold, std, role, color) in enumerate(SIGNAL_CARDS):
         if i < row1_n:
             x0 = cx0 + i * (row1_w + card_gap)
             x1 = x0 + row1_w
@@ -234,57 +245,58 @@ def main():
         d.rectangle([x0, y0, x1, y1], fill=LIGHT)
         # 左侧色条
         d.rectangle([x0, y0, x0 + 6, y1], fill=color)
-        # 阈值（大字 hero·黑体）
-        bb = d.textbbox((0, 0), threshold, font=TABLE_LBL)
-        tw = bb[2] - bb[0]
-        d.text((x0 + 20, y0 + 18), threshold, font=TABLE_LBL, fill=INK)
-        # 信号含义（中等字·筹码色）
-        bb = d.textbbox((0, 0), signal, font=ROW_BODY)
-        sw_ = bb[2] - bb[0]
-        d.text((x0 + 20, y0 + 60), signal, font=ROW_BODY, fill=color)
-        # 适用场景（小灰字）
-        d.text((x0 + 20, y0 + 92), "→ " + scenario, font=PLAYER_SUB, fill=GRAY)
+        # 指标名（黑体加粗·一行）
+        d.text((x0 + 20, y0 + 14), indicator, font=ROW_NAME, fill=INK)
+        # 阈值（筹码色·中等字）
+        d.text((x0 + 20, y0 + 56), threshold, font=TABLE_LBL, fill=color)
+        # 标准值/对比（小灰字·含对比基准）
+        d.text((x0 + 20, y0 + 92), "标准值：" + std, font=ROW_BODY, fill=INK_SOFT)
+        # 作用（小灰字）
+        d.text((x0 + 20, y0 + 122), "作用：" + role, font=PLAYER_SUB, fill=GRAY)
 
     # === 撕纸分隔 3 ===
-    torn_line(d, 1060, color=GRAY_LT, sw=2)
+    torn_line(d, 1090, color=GRAY_LT, sw=2)
 
     # ============ 03 政策/产业工具全家福 ============
-    sec3_y = 1086
+    sec3_y = 1116
     d.text((margin, sec3_y), "03", font=SEC_NUM, fill=RED)
     d.text((margin + 80, sec3_y + 6), "政策工具全家福", font=SEC_NAME, fill=INK)
     d.text((margin + 80 + text_width("政策工具全家福", SEC_NAME) + 24, sec3_y + 12),
-           "国家帮企业的 3 种办法", font=SEC_DESC, fill=GRAY)
+           "原标题 · 目标 · 机制 · 案例", font=SEC_DESC, fill=GRAY)
 
-    # 3 件工具箱（3 行堆叠·文字主导）
-    tl_y0 = 1158
-    tl_row_h = 70
+    # 3 件工具箱（3 行堆叠·左右两栏·标题左·详情右）
+    tl_y0 = 1162
+    tl_row_h = 58
     n_tl = len(TOOL_BOX)
     tl_w = W - margin * 2
-    for ti, (tool, use, history, color) in enumerate(TOOL_BOX):
+    for ti, (title, goal, mechanism, case_, color) in enumerate(TOOL_BOX):
         ty = tl_y0 + ti * tl_row_h
         # 行底（极浅）
         d.rectangle([margin, ty, margin + tl_w, ty + tl_row_h - 6], fill=LIGHT)
         # 左侧色条
         d.rectangle([margin, ty, margin + 6, ty + tl_row_h - 6], fill=color)
-        # 工具名（黑体加粗）
-        d.text((margin + 20, ty + 4), tool, font=ROW_NAME, fill=INK)
-        # 用途（中等字·同行右侧）
-        bb = d.textbbox((0, 0), tool, font=ROW_NAME)
-        tw = bb[2] - bb[0]
-        d.text((margin + 20 + tw + 18, ty + 8), "· " + use, font=ROW_BODY, fill=INK_SOFT)
-        # 历史案例（小灰字·下一行）
-        d.text((margin + 20, ty + 32), "案例：" + history,
+        # 政策原标题（黑体·左半·单行）
+        d.text((margin + 20, ty + 4), title, font=ROW_NAME, fill=INK)
+        # 政策全称补注（小灰·副标题位）
+        full_names = {
+            "大基金":     "国家集成电路产业投资基金",
+            "首台套补贴": "首台套重大技术装备保险补偿",
+            "芯片企业免税": "集成电路企业所得税减免",
+        }
+        if title in full_names:
+            d.text((margin + 20, ty + 34), "「" + full_names[title] + "」",
+                   font=PLAYER_SUB, fill=GRAY)
+        # 分隔细线（左/右）
+        d.line([(margin + 280, ty + 4), (margin + 280, ty + tl_row_h - 10)],
+               fill=GRAY_LT, width=1)
+        # 目标 + 机制（同行·右栏上半）
+        d.text((margin + 300, ty + 4), "目标：" + goal,
+               font=PLAYER_SUB, fill=INK_SOFT)
+        d.text((margin + 300, ty + 20), "机制：" + mechanism,
+               font=PLAYER_SUB, fill=INK_SOFT)
+        # 案例（独占下半行·避免与左栏副标题重叠）
+        d.text((margin + 300, ty + 36), "案例：" + case_,
                font=PLAYER_SUB, fill=GRAY)
-
-    # === 撕纸分隔 4 ===
-    torn_line(d, 1342, color=GRAY_LT, sw=2)
-
-    # ============ 04 去哪查数据 ============
-    sec4_y = 1362
-    d.text((margin, sec4_y), "04", font=SEC_NUM, fill=RED)
-    d.text((margin + 80, sec4_y + 4), "数据源", font=SEC_NAME, fill=INK)
-    d.text((margin + 80 + text_width("数据源", SEC_NAME) + 24, sec4_y + 8),
-           DATA_SOURCES, font=SEC_DESC, fill=INK_SOFT)
 
     # === 底部红条 ===
     d.rectangle([0, 1396, W, 1440], fill=RED)
