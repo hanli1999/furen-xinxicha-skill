@@ -1,21 +1,22 @@
 # generate_page3.py — 富人认知加油包 · 剪纸笔记风（文字为主版）
 #
 # 设计原则：图轻字重。色块只作小筹码（≤40px），文字字号+30%，
-#           份额数字作 hero（42pt），段编号 01-04 强化目录感。
+#           份额数字作 hero（42pt），段编号 01-03 强化目录感。
 #
-# 画布 1080×1440 · 5 段结构：
+# 画布 1080×1440 · 3 段结构：
 #   顶部 4 色彩条（细）
 #   标题区（无大黑底，文字即主）
 #   01 产业链 5 大环节 — 文字行 + 小编号圆
-#   02 三厂横评 — 5 行真对比表，份额数字 hero
-#   03 中国玩家三大梯队 — 大字玩家名 + 小色点 tier 标
-#   04 去哪查数据 — 文字列表
+#   02 关键数字怎么读 — 5 张速查卡,指标名/阈值/标准值/作用
+#   03 分析方法速查 — 3 件工具箱,工具名/适用场景/使用步骤/案例
 #   底部 — 红色收藏引导条
 #
+# v1.2.0 变更: §03 从「政策工具全家福」改为「分析方法速查」(通用方法论,规避合规风险)
+#
 # 用法（每日启动）：
-#   1. cp template_page3.py "D:/盛喜工效/华鑫/YYYYMMDD_富人信息差/generate_page3.py"
-#   2. 改 TITLE / SUBTITLE / CHAIN / TABLE_DATA / TIERS / DATA_SOURCES / FOOTER
-#   3. PYTHONIOENCODING=utf-8 /d/.venvs/ai-audio/Scripts/python.exe generate_page3.py
+#   1. cp generate_page3.py "D:/盛喜工效/华鑫/YYYYMMDD_富人信息差/generate_page3.py"
+#   2. 改 TITLE / SUBTITLE / CHAIN / SIGNAL_CARDS / TOOL_BOX / DATA_SOURCES / FOOTER
+#   3. PYTHONIOENCODING=utf-8 python generate_page3.py
 #   4. 验收：1080×1440 · 文字主导 · ≤250KB
 
 from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageEnhance
@@ -99,7 +100,7 @@ def make_paper_bg(skeleton_path):
 
 # 顶部标题
 TITLE    = "富人认知加油包"
-SUBTITLE = "5 个关键指标 + 3 个政策工具·速查手册"
+SUBTITLE = "5 个关键指标 + 3 个分析方法·速查手册"
 
 # 01 产业链/逻辑链 5 大环节（保留·已是干货骨架）
 CHAIN = [
@@ -122,24 +123,25 @@ SIGNAL_CARDS = [
     ("价格走势",      "连降 3 个月",   "反转信号",        "测库存出清/反弹时机",      YELLOW),
 ]
 
-# 03 政策/产业工具全家福：3 件套（政策原标题 + 目标 + 机制 + 案例）
+# 03 分析方法速查：3 件套（工具名 + 适用场景 + 使用步骤 + 经典案例）
+# v1.2.0 起改用通用方法论,避开政策类合规风险
 TOOL_BOX = [
-    # (政策原标题, 目标, 机制, 案例, 筹码色)
-    ("大基金",
-                              "扶持本土半导体",
-                              "国家出钱当股东",
-                              "2014 年·一期 1387 亿",
-                              BLUE),
-    ("首台套补贴",
-                              "鼓励用国产设备",
-                              "用国产出事国家赔",
-                              "补贴保费 80%",
-                              RED),
-    ("芯片企业免税",
-                              "降低芯片厂税负",
-                              "赚钱前 5 年免税",
-                              "5 免 5 减半",
-                              YELLOW),
+    # (工具名, 适用场景, 使用步骤, 经典案例, 筹码色)
+    ("波特五力",
+     "判断行业赚钱难度",
+     "画 5 维度打分",
+     "智能手机 5 维评分",
+     BLUE),
+    ("生命周期",
+     "判断赛道所处阶段",
+     "导入→成长→成熟→衰退",
+     "新能源车卡成长后期",
+     RED),
+    ("杜邦三因子",
+     "拆解 ROE 来源",
+     "净利 × 周转 × 杠杆",
+     "ROE 20% 的拆解",
+     YELLOW),
 ]
 
 # 04 数据源（一行紧凑文字）
@@ -257,12 +259,12 @@ def main():
     # === 撕纸分隔 3 ===
     torn_line(d, 1080, color=GRAY_LT, sw=2)
 
-    # ============ 03 政策/产业工具全家福 ============
+    # ============ 03 分析方法速查 ============
     sec3_y = 1106
     d.text((margin, sec3_y), "03", font=SEC_NUM, fill=RED)
-    d.text((margin + 80, sec3_y + 6), "政策工具全家福", font=SEC_NAME, fill=INK)
-    d.text((margin + 80 + text_width("政策工具全家福", SEC_NAME) + 24, sec3_y + 12),
-           "原标题 · 目标 · 机制 · 案例", font=SEC_DESC, fill=GRAY)
+    d.text((margin + 80, sec3_y + 6), "分析方法速查", font=SEC_NAME, fill=INK)
+    d.text((margin + 80 + text_width("分析方法速查", SEC_NAME) + 24, sec3_y + 12),
+           "工具名 · 适用场景 · 使用步骤 · 经典案例", font=SEC_DESC, fill=GRAY)
 
     # 3 件工具箱（3 行堆叠·左右两栏·标题左·详情右·行内宽松）
     tl_y0 = 1156
@@ -275,24 +277,24 @@ def main():
         d.rectangle([margin, ty, margin + tl_w, ty + tl_row_h - 6], fill=LIGHT)
         # 左侧色条
         d.rectangle([margin, ty, margin + 6, ty + tl_row_h - 6], fill=color)
-        # 政策原标题（黑体·左半·单行·靠上）
+        # 工具名（黑体·左半·单行·靠上）
         d.text((margin + 20, ty + 10), title, font=ROW_NAME, fill=INK)
-        # 政策全称补注（小灰·副标题位·与标题间隔开）
-        full_names = {
-            "大基金":     "国家集成电路产业投资基金",
-            "首台套补贴": "首台套重大技术装备保险补偿",
-            "芯片企业免税": "集成电路企业所得税减免",
+        # 工具注解（小灰·副标题位·与标题间隔开）
+        tool_desc = {
+            "波特五力":   "Porter's Five Forces",
+            "生命周期":   "Industry Life Cycle",
+            "杜邦三因子": "DuPont Identity",
         }
-        if title in full_names:
-            d.text((margin + 20, ty + 46), "「" + full_names[title] + "」",
+        if title in tool_desc:
+            d.text((margin + 20, ty + 46), "「" + tool_desc[title] + "」",
                    font=PLAYER_SUB, fill=GRAY)
         # 分隔细线（左/右）
         d.line([(margin + 280, ty + 8), (margin + 280, ty + tl_row_h - 14)],
                fill=GRAY_LT, width=1)
-        # 目标 + 机制 + 案例（右半·三行·每行间隔开）
-        d.text((margin + 300, ty + 10), "目标：" + goal,
+        # 适用场景 + 使用步骤 + 案例（右半·三行·每行间隔开）
+        d.text((margin + 300, ty + 10), "适用：" + goal,
                font=PLAYER_SUB, fill=INK_SOFT)
-        d.text((margin + 300, ty + 32), "机制：" + mechanism,
+        d.text((margin + 300, ty + 32), "步骤：" + mechanism,
                font=PLAYER_SUB, fill=INK_SOFT)
         d.text((margin + 300, ty + 54), "案例：" + case_,
                font=PLAYER_SUB, fill=GRAY)
