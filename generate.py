@@ -1,13 +1,12 @@
-# generate.py — 小红书图文笔记生成器 v6（富人信息差版式）
-# 画布 1080x1440（小红书 3:4 竖图）· 紧凑参数（page1 装 4 条不溢出）
-# 用法：PYTHONIOENCODING=utf-8 python generate.py
+# generate.py — 小红书图文笔记生成器 v6（华鑫富人信息差版式）·0804 编译版
+# 画布 1080x1440（小红书 3:4 竖图）· 紧凑参数 v2（page1 装 4 条不溢出）
+# 用法：PYTHONIOENCODING=utf-8 /d/.venvs/ai-audio/Scripts/python.exe generate.py
 
 from PIL import Image, ImageDraw, ImageFont
 import os
 
-# ============ 路径（按需修改） ============
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-FONT_DIR = r"C:\Windows\Fonts"  # macOS/Linux 改对应系统字体路径
+BASE_DIR = r"D:\盛喜工效\华鑫\20260804_富人信息差"
+FONT_DIR  = r"C:\Windows\Fonts"
 OUT_1 = os.path.join(BASE_DIR, "page1.png")
 OUT_2 = os.path.join(BASE_DIR, "page2.png")
 
@@ -138,7 +137,7 @@ def draw_row(img, y_start, idx, news_text, source_text, signal_text):
     return y_start + row_h + ROW_GAP
 
 
-def draw_pagination(img, page, total=3):
+def draw_pagination(img, page, total=2):
     d = ImageDraw.Draw(img)
     txt = f"{page} / {total}"
     bbox = d.textbbox((0, 0), txt, font=FONT_HEI_PAG)
@@ -168,18 +167,18 @@ NEWS = [
 ]
 
 NEWS_P2 = [
-    # ⑤ 国际 · 天然气 — 趋势（北溪管道维护 + TTF 突破 45 欧元）
+    # ⑤ 欧洲 · 天然气 — 趋势（北溪管道维护 + TTF 突破 45 欧元）
     (5, "欧洲天然气因北溪管道维护消息单日涨 3%,TTF 基准首破 45 欧元/兆瓦时,工业气价同步走高。",
      "欧洲时报/ICE 2026-08-04",
      "气价就是欧洲命门"),
-    # ⑥ 民生 · 黄金储备 — 判断（央行连续 21 个月增持,不点名行长,机构名保留）
-    (6, "国内黄金储备连续 21 个月增持,7 月单月再增 64 万盎司,对应同期金价累计上行 38%。",
-     "央行公开数据/WGC 2026-08-04",
-     "央行囤金节奏未停"),
-    # ⑦ 科技 · 具身智能 — 预测（半年融资 438 亿·大脑派占半）
-    (7, "国内具身智能赛道半年融资 438 亿元,其中具身大脑公司吸纳 222 亿,占比突破 50%。",
-     "IT桔子/36氪 2026-08-04",
-     "机器人风口往脑上走"),
+    # ⑥ 民生 · 公积金 60 城松动 — 结论（提取+额度+二套认定三件套）
+    (6, "国内超 60 城调整公积金,提取范围扩大、贷款额度上调、二套房认定同步松绑。",
+     "证券时报/住建部 2026-08-04",
+     "政策松绑就在落地"),
+    # ⑦ 科技 · AI 拟人化新政 — 预测（出海合规第一关）
+    (7, "《人工智能拟人化互动服务管理办法》今日施行,机械陪伴类等需先过伦理安全关。",
+     "网信办/财新 2026-08-04",
+     "AI 出海先过合规关"),
 ]
 
 

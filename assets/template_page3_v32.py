@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-generate_page3.py — 富人信息差 · 第 3 页（**单条消息深度解读**版）
+generate_page3.py — 富人信息差 · 第 3 页（**单条消息长段叙事深度解读**版）
 ==========================================================
 
-0825 v32 改版：从 7 条里挑 1 条最有干货价值的，做深度解读。
+0826 v34 改版：v32 内核 + DEPTH 每段从单行升级为 3-4 行长段叙事，
+            含「机制 / 反常识 / 历史 / 普通人怎么用」4 类增量知识。
 
 红线扫描 11 项全过：领导人 0 / 军事 0 / 口号 0 / 数据真伪 / 类别均衡 /
   国内源硬性 / 日期去前缀 / 气象 0 / 日期多样 / 24h / 数据驱动 page3
@@ -11,27 +12,40 @@ generate_page3.py — 富人信息差 · 第 3 页（**单条消息深度解读*
 选题优先级（v28 红线 18）：
     油价 / 物价 > 银行 > 召回 > AI > 国际
 
-深度结构（4 维）：
+深度结构（3 维长段叙事）：
     ① 核心事件卡：核心数据 + 环比涨幅 + 上游联动
-    ② 4 维深度解读：周期定位 / 信号链 / 历史对照 / A 股传导
+    ② 3 段长叙事深度（DEPTH）：机制 / 反常识 / 历史/操作
     ③ 今天能做什么：4 条具体动作（含 1 条风险提示）
+
+v34 长段叙事要素（红线 ㉗）：
+    - 每段 detail = list[str]（3-4 行），不再用单行字符串
+    - 卡片高度自适应：56 + n_lines*28 + 16
+    - 4 类增量知识必含至少 2 类：
+        机制（公式/周期/调价/传导）
+        反常识（但/其实/并不/≠/反而/滞后）
+        历史（2022/上轮/上次/曾）
+        操作（加满/月卡/销量/股/关注）
 
 设计要点：
     - hero 大字带描边（draw_text_shadow）增强视觉锤
-    - 4 维深度用 4 色竖条区分（灰/黄/绿/蓝 4 节奏）
-    - 每模块卡 = 标签 + 标题 + 详情（一行紧凑）
+    - 3 维深度用 3 色竖条区分（灰/黄/绿 4 节奏）
+    - 每模块卡 = 标签 + 标题 + 3-4 行长叙事正文
     - 风险提示在底部（合规声明，不构成投资建议）
 
 用法：
     1. cp 本文件到 D:/盛喜工效/华鑫/YYYYMMDD_xxx/generate_page3.py
     2. 改 HERO_* + EVENT + DEPTH + ACTIONS 四块数据（不改 main()）
     3. PYTHONIOENCODING=utf-8 python generate_page3.py
-    4. 跑 v30_pitfall_check.py 验证 v32 4 项专项（DEPTH/ACTIONS/RISK/HERO）
+    4. 跑 v30_pitfall_check.py 验证 v32 4 项 + v34 1 项专项（check_27）
 
-Why v32：
-    用户 0825 反馈「page3 现在是综合的，要从一条消息做深入的分析」
-    → 删 4 模块综合，改 1 条深度 4 维 + 4 行动
-    → 选题按 v28 红线 18 优先级（物价/油价 > 银行 > 召回 > AI > 国际）
+Why v34：
+    用户 0826 反馈 v32「讲了和没讲一样，没什么收获」—— v32 数字清单百度就有
+    → DEPTH 从单行数字升级为 3-4 行长段叙事
+    → 必含 4 类增量知识（机制/反常识/历史/操作）
+    → 卡片自适应高度容纳多行内容
+
+迭代史：v28 综合 → v29 召回 → v30 自动化 → v31 一问多模块 →
+      v32 单条深度 4 维 → **v34 单条深度 3 维长段叙事（当前生效）**
 """
 
 from PIL import Image, ImageDraw, ImageFont
@@ -63,6 +77,8 @@ H_DESC:     FontObj = ImageFont.truetype(os.path.join(FONT_DIR, "simfang.ttf"), 
 H_ACTION:   FontObj = ImageFont.truetype(os.path.join(FONT_DIR, "simhei.ttf"), 24)
 H_SMALL:    FontObj = ImageFont.truetype(os.path.join(FONT_DIR, "simfang.ttf"), 20)
 H_FOOTER:   FontObj = ImageFont.truetype(os.path.join(FONT_DIR, "simhei.ttf"), 22)
+H_BODY:     FontObj = ImageFont.truetype(os.path.join(FONT_DIR, "simfang.ttf"), 23)  # v34 长段正文
+H_BODY_SM:  FontObj = ImageFont.truetype(os.path.join(FONT_DIR, "simfang.ttf"), 21)  # v34 次要正文
 
 # ============================================================
 # 配色（米黄底 + 4 节奏彩）
@@ -167,32 +183,39 @@ EVENT: dict = {
     "secondary":  "50 种重要生产资料 33 种价格上涨",    # 上游联动
 }
 
-# ③ 4 维深度解读（为什么这事重要）
-# 字段：label / title / detail / color
+# ③ 3 段长叙事深度（v34 · 为什么这事重要）
+# 字段：label / title / detail(list[str] 3-4 行) / color
+# 红线 ㉗：每段 detail ≥3 行 + 含 4 类增量知识（机制/反常识/历史/操作）
 DEPTH: list[dict] = [
     {
-        "label":  "① 周期定位",
-        "title":  "新一轮猪周期底部",
-        "detail": "2026 年 8 月可能位于新一轮猪周期底部 · 启动初期",
+        "label":  "① 调价机制",
+        "title":  "为什么国内油价跟着国际走",
+        "detail": [
+            "国内成品油定价挂钩布伦特+迪拜+WTI 三地均价,",
+            "10 个工作日一调,所以这次上调是 8 月 12-22 日",
+            "国际油价上涨的滞后反映,不是当天临时涨价。",
+        ],
         "color":  GRAY,
     },
     {
-        "label":  "② 信号链",
-        "title":  "上游成本传导已确认",
-        "detail": "11 元/kg 触底 + 5.8% 环比 = 拐点 · 33/50 种原料上涨 = 上游联动",
+        "label":  "② 反常识点",
+        "title":  "国际跌国内涨 ≠ 矛盾",
+        "detail": [
+            "看似国际跌国内涨,其实是 2 周时差造成的错觉。",
+            "8/25 国际油价已回落,实际是为 9 月中旬下调",
+            "埋伏笔——下周油价窗口大概率下调。",
+        ],
         "color":  YELLOW,
     },
     {
-        "label":  "③ 历史对照",
-        "title":  "2022 年 4 月 → 80% 涨幅",
-        "detail": "上轮猪价从 12 元/kg 启动 · 12 个月涨至 23 元/kg · 涨幅 80%",
+        "label":  "③ 历史镜鉴",
+        "title":  "上次连涨后第 90 天发生了什么",
+        "detail": [
+            "2022 年俄乌战争后国内油价连涨 7 轮,",
+            "92# 从 7.8 元/升一路推到 9.2 元/升涨幅 18%。",
+            "当时新能源车订单同比+213%,加油站排队记忆犹新。",
+        ],
         "color":  GREEN,
-    },
-    {
-        "label":  "④ A 股传导",
-        "title":  "养殖 · 饲料 · 屠宰",
-        "detail": "上游：豆粕/玉米 · 中游：牧原/温氏/新希望 · 下游：双汇/雨润",
-        "color":  BLUE,
     },
 ]
 
@@ -251,33 +274,50 @@ def draw_event_block(d: ImageDraw.ImageDraw, y0: int) -> None:
     d.text((text_x + 110, y0 + 138), EVENT["secondary"], font=H_DESC, fill=INK_SOFT)
 
 
-def draw_depth_card(d: ImageDraw.ImageDraw, y0: int, item: dict) -> None:
-    """深度解读卡（110px 高）—— 4 维深度单条。
+def draw_depth_card(d: ImageDraw.ImageDraw, y0: int, item: dict) -> int:
+    """深度解读卡（v34 自适应高度）—— 3-4 行长段叙事。
 
     布局：
-        左：彩色竖条（8×110）
-        右：标签（彩色）+ 标题（黑）+ 详情（灰）
+        左：彩色竖条（8px）
+        右：标签（彩色）+ 标题（黑）+ 详情（3-4 行长叙事，灰）
 
     Args:
         d: ImageDraw 对象。
         y0: 卡片左上角 y 坐标。
-        item: DEPTH 中的单项（label/title/detail/color）。
+        item: DEPTH 中的单项（label/title/detail(list[str] 3-4 行)/color）。
+
+    Returns:
+        卡片底部 y 坐标（用于自适应间距）。
     """
-    card_h = 110
+    # 兼容旧版单行字符串（自动转换为列表）
+    detail = item["detail"]
+    if isinstance(detail, str):
+        detail = [detail]
+
+    n_lines = len(detail)
+    card_h = 56 + n_lines * 28 + 16   # 自适应：56 头部 + n_lines 行 × 28 + 16 底部
     card_x0, card_x1 = MARGIN, W - MARGIN
 
+    # 卡片底（米黄白）
+    d.rounded_rectangle([card_x0, y0, card_x1, y0 + card_h],
+                         radius=12, fill=CARD_BG)
     # 左侧彩色竖条
-    d.rectangle([card_x0, y0, card_x0 + 8, y0 + card_h], fill=item["color"])
+    d.rectangle([card_x0 + 8, y0, card_x0 + 16, y0 + card_h], fill=item["color"])
 
     # 标签 + 标题（横排）
-    label_x = card_x0 + 24
+    label_x = card_x0 + 32
     d.text((label_x, y0 + 14), item["label"], font=H_DESC, fill=item["color"])
     label_w = text_width(item["label"], H_DESC)
     d.text((label_x + label_w + 12, y0 + 12), "· " + item["title"],
            font=H_SECTION, fill=INK)
 
-    # 详情（一行紧凑）
-    d.text((label_x, y0 + 64), item["detail"], font=H_DESC, fill=INK_SOFT)
+    # 详情（多行长叙事）
+    body_y = y0 + 56
+    for line in detail:
+        d.text((label_x, body_y), line, font=H_BODY, fill=INK_SOFT)
+        body_y += 28
+
+    return y0 + card_h
 
 
 def draw_action_row(d: ImageDraw.ImageDraw, y0: int, idx: int,
@@ -364,16 +404,17 @@ def main() -> None:
     sec1_end = event_y0 + 180
     torn_line(d, sec1_end + 16, color=GRAY_LT, sw=2)
 
-    # === ③ 4 维深度解读 ===
+    # === ③ 3 维深度解读（v34 自适应卡片高度） ===
     depth_label_y = sec1_end + 36
     d.text((MARGIN, depth_label_y),
-           "4 维深度解读 · 为什么这事重要",
+           "3 维深度解读 · 为什么这事重要",
            font=H_DESC, fill=GRAY)
     depth_y0 = depth_label_y + 28
-    depth_h, depth_gap = 110, 8
-    for i, item in enumerate(DEPTH):
-        draw_depth_card(d, depth_y0 + i * (depth_h + depth_gap), item)
-    sec2_end = depth_y0 + len(DEPTH) * (depth_h + depth_gap) - depth_gap
+    depth_gap = 12
+    cursor_y = depth_y0
+    for item in DEPTH:
+        cursor_y = draw_depth_card(d, cursor_y, item) + depth_gap
+    sec2_end = cursor_y - depth_gap
     torn_line(d, sec2_end + 14, color=GRAY_LT, sw=2)
 
     # === ④ 4 条动作 ===

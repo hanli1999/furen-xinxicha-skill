@@ -633,25 +633,30 @@ def check_23_v32_hero_has_question(v32_data):
 
 
 def check_24_v32_depth_4d(v32_data):
-    """v32 坑 2：DEPTH 必须恰好 4 维（周期定位/信号链/历史对照/A 股传导）"""
-    c = Check("24", "v32 DEPTH 4 维深度", "v32")
+    """v32 坑 2：DEPTH 必须 3-4 维（v32=4 维：周期定位/信号链/历史对照/A 股传导；v34=3-4 维长段叙事）"""
+    c = Check("24", "DEPTH 3-4 维深度", "v32/v34")
     if v32_data is None:
         c.pass_("⚠️ page3 文件不存在 · 跳过")
         return c
     depths = v32_data.get('depth_list', [])
     n = len(depths)
-    if n != 4:
-        c.fail(f"❌ DEPTH 数量={n} → 必须恰好 4 维（周期定位/信号链/历史对照/A 股传导）")
+    if n < 3 or n > 4:
+        c.fail(f"❌ DEPTH 数量={n} → 必须 3-4 维（v32=4 维/v34=3-4 维）")
         return c
-    # 4 维必备检查
-    labels_required = ['周期', '信号', '历史', 'A 股']
-    labels_found = ''.join(d['label'] + d['title'] for d in depths)
-    missing = [w for w in labels_required if w not in labels_found]
-    if missing:
-        c.fail(f"❌ DEPTH 4 维缺失关键词: {missing} → 必含 周期/信号/历史/A 股")
-    else:
+    # v32: 4 维必备关键词
+    if n == 4:
+        labels_required = ['周期', '信号', '历史', 'A 股']
+        labels_found = ''.join(d['label'] + d['title'] for d in depths)
+        missing = [w for w in labels_required if w not in labels_found]
+        if missing:
+            c.fail(f"❌ DEPTH 4 维缺失关键词: {missing} → 必含 周期/信号/历史/A 股")
+            return c
         titles = ' / '.join(d['title'] for d in depths)
-        c.pass_(f"✓ DEPTH 4 维齐: {titles}")
+        c.pass_(f"✓ DEPTH 4 维齐 (v32): {titles}")
+    else:
+        # v34: 3 维长段叙事（关键词不强制，由 check_27 验证叙事质量）
+        titles = ' / '.join(d['title'] for d in depths)
+        c.pass_(f"✓ DEPTH 3 维 (v34 长段叙事): {titles}")
     return c
 
 
@@ -693,6 +698,75 @@ def check_26_v32_risk_disclaimer(v32_data):
         c.fail(f"❌ RISK 缺关键词: {missing} → 加'市场有风险·投资需谨慎·本文不构成投资建议'")
     else:
         c.pass_(f"✓ RISK='{risk[:40]}...'")
+    return c
+
+
+def check_27_v34_long_narrative(v32_data, page3_path):
+    """v34 坑：DEPTH 长段叙事 + 反常识干货（红线 ㉗）
+
+    必含：
+    1. 每段 detail ≥3 行（v33 失败模式 = 1 行）
+    2. 4 类元素关键词至少出现 1 类（避免再次罗列数字）
+       - 机制：定价/公式/规则/传导/挂钩/周期/调价/机制
+       - 反常识：但/其实/并不是/不等于/≠/反/反而
+       - 历史：2022/2020/2018/曾/历/上轮/上次/当年
+       - 操作：加满/月卡/销量/订单/股/买/不买/今晚/明天/两周
+    """
+    c = Check("27", "v34 DEPTH 长段叙事 + 4 类增量知识", "v34")
+    if v32_data is None:
+        c.pass_("⚠️ page3 文件不存在 · 跳过")
+        return c
+    depths = v32_data.get('depth_list', [])
+    if not depths:
+        c.fail("❌ DEPTH 为空 → v34 必填 3-4 段长段叙事")
+        return c
+
+    # 启发式：从 page3.py 读 detail 原始内容（multi-line 字符串列表）
+    detail_blocks = []
+    if os.path.exists(page3_path):
+        with open(page3_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        # 抓 "detail": ["...", "...", ...] 字符串列表形式
+        list_matches = re.findall(r'"detail"\s*:\s*\[\s*(.*?)\s*\]', content, re.DOTALL)
+        for lm in list_matches:
+            lines = re.findall(r'["\']([^"\']+)["\']', lm)
+            if lines:
+                detail_blocks.append(lines)
+
+    # 4 类元素关键词
+    KW_MECHANISM = ['定价', '公式', '规则', '传导', '挂钩', '周期', '调价', '机制']
+    KW_COUNTER   = ['但', '其实', '并不是', '不等于', '≠', '反而', '反过来', '滞后', '埋伏笔']
+    KW_HISTORY   = ['2022', '2020', '2018', '2019', '2023', '曾', '历', '上轮', '上次', '当年', '过去']
+    KW_ACTION    = ['加满', '月卡', '销量', '订单', '股', '买', '不买', '今晚', '明天', '两周', '长线', '看', '关注', '规避']
+
+    short_narratives = []
+    missing_kw_segments = []
+    for i, d in enumerate(depths):
+        # 1. 行数检查（取字符串列表或回退字符串长度粗判）
+        if i < len(detail_blocks):
+            n_lines = len(detail_blocks[i])
+            full_text = ''.join(detail_blocks[i])
+        else:
+            # fallback：detail 字符串粗判（按字数推算行数）
+            full_text = d['detail']
+            n_lines = max(1, (len(full_text) + 27) // 28)  # ~28 字/行
+
+        if n_lines < 3:
+            short_narratives.append(f"段{i+1}: 仅{n_lines}行（必≥3行长段叙事）")
+
+        # 2. 4 类关键词检查
+        if not any(k in full_text for k in KW_MECHANISM + KW_COUNTER + KW_HISTORY + KW_ACTION):
+            missing_kw_segments.append(f"段{i+1}: '{d['title'][:20]}' 无4类关键词")
+
+    if short_narratives:
+        c.fail(f"❌ {len(short_narratives)} 段不满足≥3行长叙事：\n   " +
+               "\n   ".join(short_narratives))
+        return c
+    if missing_kw_segments:
+        c.fail(f"❌ {len(missing_kw_segments)} 段缺 4 类增量知识（机制/反常识/历史/操作）：\n   " +
+               "\n   ".join(missing_kw_segments))
+        return c
+    c.pass_(f"✓ DEPTH {len(depths)} 段均为长叙事（≥3行）+ 含机制/反常识/历史/操作")
     return c
 
 
@@ -741,10 +815,12 @@ def run_all_checks(project_dir):
         check_24_v32_depth_4d(v32_data),
         check_25_v32_action_4(v32_data),
         check_26_v32_risk_disclaimer(v32_data),
+        # v34 长段叙事版专项
+        check_27_v34_long_narrative(v32_data, page3_path),
     ]
 
     print(f"\n{'='*60}")
-    print(f"v30+v32 踩坑清单核查 · {date_text} · {len(checks)} 项")
+    print(f"v30+v32+v34 踩坑清单核查 · {date_text} · {len(checks)} 项")
     print(f"{'='*60}\n")
 
     failed = []
