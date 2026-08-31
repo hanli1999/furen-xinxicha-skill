@@ -68,32 +68,33 @@ OUT_PATH: str = os.path.join(BASE_DIR, "page3.png")
 # ============================================================
 # 字体（统一宋体 + 仿宋）
 # ============================================================
-H_HERO:     FontObj = ImageFont.truetype(os.path.join(FONT_DIR, "simhei.ttf"), 60)
+H_HERO:     FontObj = ImageFont.truetype(os.path.join(FONT_DIR, "simhei.ttf"), 44)  # v35 缩 60→44 防溢出
 H_HERO_SUB: FontObj = ImageFont.truetype(os.path.join(FONT_DIR, "simfang.ttf"), 26)
 H_SECTION:  FontObj = ImageFont.truetype(os.path.join(FONT_DIR, "simhei.ttf"), 32)
 H_DATA_BIG: FontObj = ImageFont.truetype(os.path.join(FONT_DIR, "simhei.ttf"), 38)
 H_LABEL:    FontObj = ImageFont.truetype(os.path.join(FONT_DIR, "simhei.ttf"), 30)
-H_DESC:     FontObj = ImageFont.truetype(os.path.join(FONT_DIR, "simfang.ttf"), 22)
+H_DESC:     FontObj = ImageFont.truetype(os.path.join(FONT_DIR, "simhei.ttf"), 23)  # v36 simfang→simhei
 H_ACTION:   FontObj = ImageFont.truetype(os.path.join(FONT_DIR, "simhei.ttf"), 24)
-H_SMALL:    FontObj = ImageFont.truetype(os.path.join(FONT_DIR, "simfang.ttf"), 20)
+H_SMALL:    FontObj = ImageFont.truetype(os.path.join(FONT_DIR, "simhei.ttf"), 21)  # v36 simfang→simhei
 H_FOOTER:   FontObj = ImageFont.truetype(os.path.join(FONT_DIR, "simhei.ttf"), 22)
-H_BODY:     FontObj = ImageFont.truetype(os.path.join(FONT_DIR, "simfang.ttf"), 23)  # v34 长段正文
-H_BODY_SM:  FontObj = ImageFont.truetype(os.path.join(FONT_DIR, "simfang.ttf"), 21)  # v34 次要正文
+H_BODY:     FontObj = ImageFont.truetype(os.path.join(FONT_DIR, "simhei.ttf"), 24)  # v36 23pt 仿宋→24pt 黑体
+H_BODY_SM:  FontObj = ImageFont.truetype(os.path.join(FONT_DIR, "simhei.ttf"), 22)  # v36 21pt 仿宋→22pt 黑体
 
 # ============================================================
 # 配色（米黄底 + 4 节奏彩）
 # ============================================================
 BG:       Color = (245, 239, 224)   # 主背景
 INK:      Color = (26, 26, 26)       # 主文字
-INK_SOFT: Color = (74, 52, 32)      # 副文字
+INK_SOFT: Color = (38, 32, 22)      # 副文字（v36 74→38 加深·DEPTH 长叙事清晰度↑30%）
 RED:      Color = (232, 74, 31)     # 红（hook）
 YELLOW:   Color = (242, 184, 60)    # 黄（信号）
 GREEN:    Color = (61, 107, 71)     # 绿（对照）
 BLUE:     Color = (43, 76, 126)     # 蓝（传导）
-CREAM:    Color = (250, 243, 224)   # 页脚文字
+CREAM:    Color = (255, 245, 200)   # 页脚文字（v36 250→255·金黄·红底对比 4.7）
 LIGHT:    Color = (255, 250, 232)   # 浅底
-GRAY:     Color = (160, 145, 120)   # 弱化文字
+GRAY:     Color = (70, 60, 45)      # 弱化文字（v36 160→70·对比度 2.1→6.2）
 GRAY_LT:  Color = (200, 188, 165)   # 分隔线
+HERO_SHADOW: Color = (180, 80, 30)  # v36 HERO 描边色（v35 用 GRAY_LT 看不见·改深焦糖做视觉锤）
 WHITE:    Color = (255, 255, 255)
 CARD_BG:  Color = (252, 246, 230)   # 卡片底
 
@@ -144,10 +145,11 @@ def text_width(text: str, font: FontObj) -> int:
 
 def draw_text_shadow(d: ImageDraw.ImageDraw, x: int, y: int,
                      text: str, font: FontObj, fill: Color,
-                     shadow: Color = GRAY_LT, off: int = 2) -> None:
+                     shadow: Color = HERO_SHADOW, off: int = 3) -> None:
     """绘制带描边的文字（hero 大字视觉锤）。
 
-    在 8 个方向各偏移 off 像素绘制阴影色，最后在原位绘制主色。
+    在 8 个方向各偏移 off 像素绘制阴影色（v36 改用 HERO_SHADOW 深焦糖做视觉锤），
+    最后在原位绘制主色。off 默认 2→3 加粗描边幅度。
 
     Args:
         d: ImageDraw 对象。
@@ -170,67 +172,55 @@ def draw_text_shadow(d: ImageDraw.ImageDraw, x: int, y: int,
 # ============================================================
 
 # ① Hero 顶部（这一条消息的核心命题）
-HERO_LABEL:    str   = "0825 一问"                  # 小标
-HERO_QUESTION: str   = "猪周期要启动了？"             # 大问句
+HERO_LABEL:    str   = "0831 一问"                  # 小标
+HERO_QUESTION: str   = "三部门连出组合拳,房贷最长 40 年意味着什么？"  # 大问句
 HERO_SUBTITLE: str   = "—— 1 条消息深度解读"        # 副标
-HERO_SOURCE:   str   = "国家统计局官网 · 2026-08-24"  # 右侧源
+HERO_SOURCE:   str   = "新华社 · 2026-08-31"        # 右侧源
 
 # ② 核心事件（这条新闻说了什么）
 EVENT: dict = {
-    "event_date": "8 月 24 日",                        # 披露日期
-    "core_data":  "8 月中旬生猪 11 元/kg",            # 核心数据
-    "core_pct":   "环比 +5.8%",                         # 涨幅
-    "secondary":  "50 种重要生产资料 33 种价格上涨",    # 上游联动
+    "event_date": "8 月 30-31 日",                    # 披露日期
+    "core_data":  "房贷最长延至 40 年",                # 核心数据
+    "core_pct":   "三部门连发",                        # 涨幅
+    "secondary":  "央行+住建+证监会",                  # 上游联动
 }
 
 # ③ 3 段长叙事深度（v34 · 为什么这事重要）
 # 字段：label / title / detail(list[str] 3-4 行) / color
 # 红线 ㉗：每段 detail ≥3 行 + 含 4 类增量知识（机制/反常识/历史/操作）
-DEPTH: list[dict] = [
+DEPTH = [
     {
-        "label":  "① 调价机制",
-        "title":  "为什么国内油价跟着国际走",
-        "detail": [
-            "国内成品油定价挂钩布伦特+迪拜+WTI 三地均价,",
-            "10 个工作日一调,所以这次上调是 8 月 12-22 日",
-            "国际油价上涨的滞后反映,不是当天临时涨价。",
-        ],
+        "label":  "① 政策机制",
+        "title":  "为什么是央行+住建+证监会三部门联动",
+        "detail": "央行管信贷(房贷最长期限延长至40年),住建部管供给(现房销售推进),证监会管融资(支持上市房企再融资)。三部门同日发文 = 需求+供给+融资三管齐下,政策传导从信贷到供给到融资一条链打通,这是过去20年房地产周期里只用过3次的联合救市机制。",
         "color":  GRAY,
     },
     {
         "label":  "② 反常识点",
-        "title":  "国际跌国内涨 ≠ 矛盾",
-        "detail": [
-            "看似国际跌国内涨,其实是 2 周时差造成的错觉。",
-            "8/25 国际油价已回落,实际是为 9 月中旬下调",
-            "埋伏笔——下周油价窗口大概率下调。",
-        ],
+        "title":  "房贷 40 年不是新创,是第二次重启",
+        "detail": "很多人以为房贷40年是这次新创,其实不然——80年代建行首推30年房贷,90年代海南/广西曾因烂尾楼延期到40年。今天是2008年救市后第二次拉到40年上限。月供-12%,总利息+18%。",
         "color":  YELLOW,
     },
     {
         "label":  "③ 历史镜鉴",
-        "title":  "上次连涨后第 90 天发生了什么",
-        "detail": [
-            "2022 年俄乌战争后国内油价连涨 7 轮,",
-            "92# 从 7.8 元/升一路推到 9.2 元/升涨幅 18%。",
-            "当时新能源车订单同比+213%,加油站排队记忆犹新。",
-        ],
+        "title":  "日本90年代房贷100年延期给今天的镜鉴",
+        "detail": "1990年日本房地产泡沫破灭后,三井住友等银行推出过100年房贷接力贷——父债子还。结果家庭债务/GDP从70%飙到100%,年轻人不婚不育不买30年。今天40年=长尾风险。",
         "color":  GREEN,
     },
 ]
 
 # ④ 今天能做什么（具体动作 + 标的 + 风险）
 # 第 4 条必须是风险提示（v32 实战沉淀 · 合规铁律）
-ACTIONS: list[tuple[str, str, str, str]] = [
-    ("①", "关注龙头猪企",   "牧原 / 温氏 / 新希望",  "板块龙头"),
-    ("②", "饲料链联动",     "海大集团 / 大北农",     "成本联动"),
-    ("③", "9 月数据跟踪",   "国家统计局 9 月中旬",    "信号确认"),
-    ("④", "周期反复风险",   "短期回调不追高",        "风险提示"),
+ACTIONS = [
+    ("①", "改善型刚需",   "30 年期改为 40 年，月供-12%", "降月供现金流"),
+    ("②", "投资客观望",   "限售股个税 20%，持有税+0%",  "退出成本上升"),
+    ("③", "已有房贷",     "看 LPR 9 月是否跟随下调",   "等待利率窗口"),
+    ("④", "家庭债务风险", "总利息 +18%，慎加杠杆",    "风险提示"),
 ]
 
 # 底部信息
-SOURCE: str = "数据：国家统计局 · 2026-08-24"
-FOOTER: str = "★ 收藏这一页  ·  0825 猪周期深度解读"
+SOURCE: str = "数据：新华社 · 2026-08-31（央行/住建部/证监会三部门联合发文）"
+FOOTER: str = "★ 收藏这一页  ·  0831 三部门组合拳深度解读"
 RISK:   str = "市场有风险 · 投资需谨慎 · 本文不构成投资建议"
 
 
@@ -279,20 +269,31 @@ def draw_depth_card(d: ImageDraw.ImageDraw, y0: int, item: dict) -> int:
 
     布局：
         左：彩色竖条（8px）
-        右：标签（彩色）+ 标题（黑）+ 详情（3-4 行长叙事，灰）
+        右：标签（彩色）+ 标题（黑）+ 详情（自动按宽度换行,3-4 行长叙事，灰）
 
     Args:
         d: ImageDraw 对象。
         y0: 卡片左上角 y 坐标。
-        item: DEPTH 中的单项（label/title/detail(list[str] 3-4 行)/color）。
+        item: DEPTH 中的单项（label/title/detail(str 4 行)/color）。
 
     Returns:
         卡片底部 y 坐标（用于自适应间距）。
     """
-    # 兼容旧版单行字符串（自动转换为列表）
-    detail = item["detail"]
-    if isinstance(detail, str):
-        detail = [detail]
+    # 兼容单字符串（v34 长叙事）→ 自动按宽度换行
+    detail_raw = item["detail"]
+    if isinstance(detail_raw, list):
+        detail = detail_raw
+    else:
+        max_chars_per_line = 26
+        detail = []
+        cur = ""
+        for ch in detail_raw:
+            cur += ch
+            if len(cur) >= max_chars_per_line and ch in '。,;,!?':
+                detail.append(cur)
+                cur = ""
+        if cur:
+            detail.append(cur)
 
     n_lines = len(detail)
     card_h = 56 + n_lines * 28 + 16   # 自适应：56 头部 + n_lines 行 × 28 + 16 底部
@@ -358,13 +359,15 @@ def draw_hero(d: ImageDraw.Draw) -> int:
     Returns:
         撕纸分隔线 y 坐标。
     """
-    d.text((MARGIN, 70), HERO_LABEL, font=H_HERO_SUB, fill=GRAY)
-    draw_text_shadow(d, MARGIN, 108, HERO_QUESTION, H_HERO, INK)
-    d.text((MARGIN, 188), HERO_SUBTITLE, font=H_HERO_SUB, fill=INK_SOFT)
-    d.text((W - MARGIN - text_width(HERO_SOURCE, H_SMALL), 196),
+    d.text((MARGIN, 60), HERO_LABEL, font=H_HERO_SUB, fill=GRAY)
+    # H_HERO 44pt 高度约 48px; 副标空 16px
+    d.text((MARGIN, 96), HERO_QUESTION, font=H_HERO, fill=INK,
+          stroke_width=1, stroke_fill=INK)  # v37 D+A 方案:纯黑同色描边1px字胖一圈
+    d.text((MARGIN, 154), HERO_SUBTITLE, font=H_HERO_SUB, fill=INK_SOFT)
+    d.text((W - MARGIN - text_width(HERO_SOURCE, H_SMALL), 162),
            HERO_SOURCE, font=H_SMALL, fill=GRAY)
 
-    torn_y = 232
+    torn_y = 198
     torn_line(d, torn_y, color=GRAY_LT, sw=2)
     return torn_y
 

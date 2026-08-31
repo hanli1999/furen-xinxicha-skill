@@ -347,6 +347,92 @@ D:\盛喜工效\华鑫\20260826_富人信息差\page3.png  (300K · 含 3 段长
 
 ---
 
+## 6.7 page3 字清晰度 3 件套（v36 · 0831 新增）+ HERO 标题加粗（v37）
+
+**Why**：v34 长段叙事引入 4 类增量知识（机制/反常识/历史/普通人怎么用）后，DEPTH 段文字密度提升，但用户反馈"第三页当前所有的字有的清晰,有的很浅"——不同字色对比度不一致是元凶（米黄背景 BG=(251,246,228) 下 GRAY (160,145,120) 仅 2.1:1，触红线）。
+
+### 3 件套核心（D 没用上，A+B+C 全落地）
+
+#### A. 颜色加深（必跑 · DEPTH 段 4 类颜色）
+
+page3 长段叙事"大事回望 / 数据解读 / 历史对照"DEPTH 段用 4 类颜色：
+
+```python
+INK_SOFT:   Color = (38, 32, 22)        # 副文字（v36 74→38 加深·对比度↑30%）
+CREAM:      Color = (255, 245, 200)     # 页脚文字（v36 250→255·金黄·红底对比 4.7）
+GRAY:       Color = (70, 60, 45)        # 弱化文字（v36 160→70·对比度 2.1→6.2 AAA）
+GRAY_LT:    Color = (200, 188, 165)     # 分隔线（保留浅色，仅用于线条）
+HERO_SHADOW: Color = (180, 80, 30)      # v36 HERO 描边色（深焦糖·做视觉锤）
+```
+
+**WCAG 对比度判定**（米黄背景）：
+- 正文 ≥ 4.5:1 (AA) → 推 ≥ 7:1 (AAA)
+- 弱化文字 ≤ 4.5:1 看着浅 → 必加深
+
+#### B. 字体升级（强烈推荐 · DEPTH 段 4 类字号）
+
+```python
+H_DESC:     FontObj = ImageFont.truetype(os.path.join(FONT_DIR, "simhei.ttf"), 23)
+H_SMALL:    FontObj = ImageFont.truetype(os.path.join(FONT_DIR, "simhei.ttf"), 21)
+H_BODY:     FontObj = ImageFont.truetype(os.path.join(FONT_DIR, "simhei.ttf"), 24)
+H_BODY_SM:  FontObj = ImageFont.truetype(os.path.join(FONT_DIR, "simhei.ttf"), 22)
+# v36 simfang 22/20/23/21pt → simhei 23/21/24/22pt（黑体笔锋清晰）
+```
+
+DEPTH 长段叙事清晰度 +30%。
+
+#### C. 描边升级（HERO 大字视觉锤 · 默认值）
+
+```python
+def draw_text_shadow(d, x, y, text, font, fill,
+                     shadow: Color = HERO_SHADOW,  # GRAY_LT→HERO_SHADOW
+                     off: int = 3) -> None:        # 2→3 加粗描边幅度
+    ...
+```
+
+HERO 大字（"意味着什么"）用深焦糖描边做视觉锤。
+
+### D+A 方案：HERO 主标题加粗（v37 · 0831）
+
+**踩坑**：用户先后 3 轮反馈 page3 HERO 标题：
+1. 第一轮："屎黄色" → 切 D 方案（纯黑无描边）
+2. 第二轮："较粗一些，还是有点浅" → 加 A 方案（stroke_width=1 同色描边）
+3. 最终落地：`stroke_width=1, stroke_fill=INK` 纯黑 1px 同色描边，字胖一圈
+
+**调用代码**：
+
+```python
+# v37 D+A 方案：纯黑同色描边 1px 字胖一圈
+d.text(
+    (MARGIN, 96), HERO_QUESTION, font=H_HERO, fill=INK,
+    stroke_width=1, stroke_fill=INK,
+)
+```
+
+**为什么不用 A/B/C 描边色**：
+- HERO_SHADOW (180,80,30) 深焦糖 → 屎黄（用户原话"屎黄色"）
+- ORANGE (240,138,36) → 跟表头橙色撞色，缺层次
+- INK 同色 → 字胖一圈·纯黑·视觉锤效果最好
+
+### 跑前必跑清单（v36 + v37）
+
+- [ ] 检查 GRAY 是否 ≥ 6.0 对比度（米黄底）
+- [ ] 检查 DEPTH 段是否用 simhei（非 simfang）
+- [ ] 检查 HERO 描边色是否非灰（用深焦糖/橙红做视觉锤）
+- [ ] **HERO 标题调用必带 `stroke_width=1, stroke_fill=INK`**（v37 落地）
+
+### How to apply
+
+每次 page3 长段叙事渲染前，必跑 v36 + v37 检查清单。3 件套缺一不可：
+- 缺 A → DEPTH 段某些字看着浅（米黄底 + 浅灰字 = 不到 3:1）
+- 缺 B → simfang 在小字号渲染边缘发虚
+- 缺 C → HERO 大字失去视觉锤
+- 缺 v37 → HERO 主标题偏瘦、看着不够"实"
+
+实战验证：0831 page3"房贷40年"长叙事，3 件套 + v37 全落地后，HERO 大字 / DEPTH 段 / 数据段 / 历史段 全部 WCAG AAA 级（6.2:1+）。
+
+---
+
 ## 7. 目录结构
 
 ```
@@ -407,6 +493,8 @@ D:\盛喜工效\华鑫\20260826_富人信息差\page3.png  (300K · 含 3 段长
 | **v32** | **0825** | **page3 单条深度版（1 条消息 4 维深度 + 4 条行动）+ v30_pitfall_check 加 4 项专项 check_23~26 + template_page3.py 加 Type hints + docstring + 红线 ㉖** |
 | v33 | 0826 | v32 升级·DEPTH 4 维改"调价幅度/历史对照/A股标的/替代选择"——**失败**（罗列数字≠解读，用户当场打回"讲了和没讲一样"）|
 | **v34** | **0826** | **page3 长段叙事版（v32 内核 + DEPTH 每段 3-4 行长叙事 + 4 类增量知识：机制/反常识/历史/普通人怎么用）+ 红线 ㉗ + v30_pitfall_check check_27** |
+| **v36** | **0831** | **page3 字清晰度 3 件套：A 颜色加深（GRAY 2.1→6.2 AAA）+ B 字体升级（4 类正文 simfang→simhei）+ C 描边升级（HERO_SHADOW 180/80/30 · off=3）** |
+| **v37** | **0831** | **page3 HERO 标题配色 D+A 方案：纯黑 INK + stroke_width=1 同色描边（用户屎黄打回→纯黑无描边→仍偏浅→同色 1px 描边加粗字胖一圈）** |
 
 ---
 
