@@ -770,6 +770,200 @@ def check_27_v34_long_narrative(v32_data, page3_path):
     return c
 
 
+def check_28_v38_depth2_counter_data(v32_data, page3_path):
+    """v38 坑：page3 DEPTH② 反常识数据必须二次溯源（红线 ㉘·0905）
+
+    反常识点段落中的具体数据（如市场份额/产能/价格）必须：
+    1. 有具体数字（不能模糊"不足 5% / 仍依赖进口"）
+    2. 至少 1 个第三方独立数据源标注（Counterpoint/CFM/Omdia/Wind/同花顺/官方公报）
+    3. 不能出现"凭空写"的反常识表述（无数字 + 无源 = 红线 ㉘ 触线）
+
+    0905 实战踩坑：长鑫 LPDDR5X 量产稿写"长鑫全球 DRAM 份额不足 5%、EUV 依赖进口"
+    → 实际份额 7.7%-8% 已超美光（Counterpoint/CFM/Omdia 三方一致数据）
+    """
+    c = Check("28", "v38 DEPTH② 反常识数据二次溯源", "v38")
+    if v32_data is None or page3_path is None or not os.path.exists(page3_path):
+        c.pass_("⚠️ page3 文件不存在 · 跳过")
+        return c
+    depths = v32_data.get('depth_list', [])
+    if not depths:
+        c.pass_("⚠️ DEPTH 为空 · 跳过")
+        return c
+
+    with open(page3_path, 'r', encoding='utf-8') as f:
+        content = f.read()
+
+    # 第三方独立源关键词
+    SOURCE_KW = ['Counterpoint', 'CFM', 'Omdia', 'TrendForce', 'Wind', '同花顺', '海关总署',
+                 '财政部', '央行', '国家统计局', '邮政局', '商务部', '央行', 'WGC',
+                 '财联社', '彭博', '路透', 'Bloomberg', 'S&P', 'S&P Global']
+
+    # 反常识点关键词（DEPTH② 段通常含这些）
+    COUNTER_KW = ['反常识', '并不', '并不等于', '≠', '误区', '反', '反而', '并未']
+
+    # 模糊表述（红线 ㉘ 黑名单——必须替换为可溯源数字）
+    VAGUE_BLACKLIST = ['不足 5%', '不足5%', '仍依赖进口', '依赖进口', '目前', '仍以低端为主']
+
+    issues = []
+    for i, d in enumerate(depths):
+        title = d.get('title', '')
+        detail = d.get('detail', '')
+
+        # 只针对 DEPTH② 反常识点段落（按标题关键词定位）
+        if not any(k in title for k in ['反常识', '②', '不等于', '误区', '破']):
+            continue
+
+        # 检查 1：反常识段是否含数字（必须有具体数字，否则就是"凭感觉写"）
+        has_number = bool(re.search(r'\d', detail))
+
+        # 检查 2：是否含第三方独立源标注
+        has_source = any(k in detail for k in SOURCE_KW)
+
+        # 检查 3：是否触黑名单（模糊表述）
+        has_vague = any(v in detail for v in VAGUE_BLACKLIST)
+
+        if has_vague:
+            issues.append(f"段{i+1}「{title[:18]}」触黑名单：含「不足5%」/「依赖进口」等模糊表述 → 必查 Counterpoint/CFM/Omdia")
+        elif has_number and not has_source:
+            issues.append(f"段{i+1}「{title[:18]}」有数字但无第三方源标注 → 必加 Counterpoint/CFM/Omdia/WGC 等")
+
+    if issues:
+        c.fail("❌ DEPTH② 反常识数据缺溯源：\n   " +
+               "\n   ".join(issues))
+        return c
+    c.pass_("✓ DEPTH② 反常识点均有数字 + 第三方源标注")
+    return c
+
+
+def check_29_v38_report_knowledge_increment(project_dir):
+    """v38 坑：数据真伪核对报告必须结论先行 + 知识增量（红线 ㉙·0905）
+
+    报告 5 类禁用句式（命中 = 水话）：
+    1. "X 条全部 PASS · Y 项红线全过" — 流程化检查表
+    2. "基本事实正确" / "与多家国内源表述一致" — 软话套话
+    3. "已确认 / 已缩 / 已替换 / 已渲染" — 过程性废话
+    4. "✓" / "PASS" / "全过" — 凑字总结
+    5. 报告无「核心观点/主线/未来盯点」段 — 缺观点
+
+    报告必备特征：
+    - 含「核心观点」或「主线」或「未来30天盯点」段
+    - 段首以"观点 1/2/3"或"判断 1/2/3"或"结论先行"开头
+    - 总字数 ≥ 400 字（短于 400 = 凑字）
+
+    0905 用户反馈原话：「不仅是核对数据真实性，而是少说水话，明确知识或观点」
+    """
+    c = Check("29", "v38 数据真伪报告必须含知识增量+观点", "v38")
+    report_path = os.path.join(project_dir, "数据真伪核对报告.md")
+    if not os.path.exists(report_path):
+        c.fail("❌ 数据真伪核对报告.md 不存在")
+        return c
+    with open(report_path, 'r', encoding='utf-8') as f:
+        content = f.read()
+
+    # 1. 必含特征：核心观点/主线/未来盯点 至少 1 个
+    KEY_FEATURES = ['核心观点', '主线', '未来', '盯点', '结论先行', '判断', '意味着']
+    has_feature = any(k in content for k in KEY_FEATURES)
+    if not has_feature:
+        c.fail("❌ 报告无核心观点/未来盯点段 → 用户当场打回「说水话，没观点」")
+        return c
+
+    # 2. 5 类禁用句式
+    WATER_PATTERNS = [
+        (r'\d+\s*条全部\s*PASS', '「X 条全部 PASS」凑字总结'),
+        (r'\d+\s*项红线全过', '「X 项红线全过」凑字总结'),
+        (r'基本事实正确', '「基本事实正确」软话套话'),
+        (r'与多家国内源表述一致', '「与多家国内源表述一致」软话套话'),
+        (r'不构成失实', '「不构成失实」软话套话'),
+        (r'(已确认|已缩|已替换|已渲染|已修复)(?!\w)', '过程性废话'),
+        (r'三件套可交付', '「X 件套可交付」凑字总结'),
+        (r'全部数据真伪 PASS', '「全部 PASS」流程化检查表'),
+    ]
+    water_hits = []
+    for pat, desc in WATER_PATTERNS:
+        if re.search(pat, content):
+            water_hits.append(desc)
+
+    if water_hits:
+        c.fail("❌ 报告含水话特征：\n   " +
+               "\n   ".join(f"⚠️ {h}" for h in water_hits))
+        return c
+
+    # 3. 字数下限
+    word_count = len(content)
+    if word_count < 400:
+        c.fail(f"❌ 报告字数 {word_count} < 400 字（凑字嫌疑）")
+        return c
+
+    c.pass_(f"✓ 报告含核心观点/未来盯点段 + 字数 {word_count} ≥ 400")
+    return c
+
+
+def check_30_v38_fix_three_steps(project_dir):
+    """v38 坑：修复必须三步全做（红线 ㉚·0905）
+
+    当 page3.py / generate.py 的修改时间 晚于 page3.png / page1.png 时，
+    报告必须显式标注「修复 → 重渲染 → 更新核对报告」三步都已执行。
+
+    必查 3 个一致：
+    1. generate.py / generate_page3.py mtime ≤ page1.png / page2.png / page3.png mtime
+       （代码改了，PNG 没重渲染 = 红线 ㉚ 触线）
+    2. 数据真伪核对报告 mtime ≥ 代码修改 mtime
+       （代码改了但报告没更新 = 红线 ㉚ 触线）
+    3. 报告内必须显式出现「重渲」「重渲染」「重新渲染」关键字（如有代码修改）
+       （如果代码 mtime 晚于 PNG mtime 但报告无「重渲」字 = 凑字嫌疑）
+
+    0905 实战踩坑：page3 长鑫份额改对了，但用旧 PNG 验收 → 错误图流出去
+    """
+    c = Check("30", "v38 修复三步全做（代码/PNG/报告 mtime 一致）", "v38")
+    code_files = ['generate.py', 'generate_page3.py']
+    png_files  = ['page1.png', 'page2.png', 'page3.png']
+
+    code_mtime = 0.0
+    code_names = []
+    for cf in code_files:
+        p = os.path.join(project_dir, cf)
+        if os.path.exists(p):
+            t = os.path.getmtime(p)
+            if t > code_mtime:
+                code_mtime = t
+            code_names.append(cf)
+
+    if code_mtime == 0.0:
+        c.pass_("⚠️ 代码文件不存在 · 跳过")
+        return c
+
+    # 1. PNG mtime 必须 ≥ 代码 mtime（否则 = 只改代码没重渲染）
+    outdated_pngs = []
+    for pf in png_files:
+        p = os.path.join(project_dir, pf)
+        if os.path.exists(p):
+            t = os.path.getmtime(p)
+            if t < code_mtime - 1:  # 容忍 1 秒时钟漂移
+                outdated_pngs.append(f"{pf} (mtime={int(t)} < code={int(code_mtime)})")
+
+    report_path = os.path.join(project_dir, "数据真伪核对报告.md")
+    report_mtime = os.path.getmtime(report_path) if os.path.exists(report_path) else 0
+
+    issues = []
+
+    # 代码改了但 PNG 没重渲
+    if outdated_pngs:
+        issues.append("❌ 代码改了但 PNG 未重渲染：\n   " +
+                      "\n   ".join(outdated_pngs) +
+                      "\n   → 必跑 python generate_page3.py 重出 PNG")
+
+    # 代码改了但报告没更新
+    if report_mtime < code_mtime - 1:
+        issues.append(f"❌ 代码改了但核对报告未更新（report_mtime={int(report_mtime)} < code_mtime={int(code_mtime)}）")
+
+    if issues:
+        c.fail("\n\n".join(issues))
+        return c
+
+    c.pass_(f"✓ 代码/PNG/报告 mtime 一致（最新代码 {code_names[-1]} = {int(code_mtime)}）")
+    return c
+
+
 # ============================================================
 # 主流程
 # ============================================================
@@ -817,10 +1011,14 @@ def run_all_checks(project_dir):
         check_26_v32_risk_disclaimer(v32_data),
         # v34 长段叙事版专项
         check_27_v34_long_narrative(v32_data, page3_path),
+        # v38 升级：报告文风 + 反常识溯源 + 修复三步全做
+        check_28_v38_depth2_counter_data(v32_data, page3_path),
+        check_29_v38_report_knowledge_increment(project_dir),
+        check_30_v38_fix_three_steps(project_dir),
     ]
 
     print(f"\n{'='*60}")
-    print(f"v30+v32+v34 踩坑清单核查 · {date_text} · {len(checks)} 项")
+    print(f"v30+v32+v34+v38 踩坑清单核查 · {date_text} · {len(checks)} 项")
     print(f"{'='*60}\n")
 
     failed = []
