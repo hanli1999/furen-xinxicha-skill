@@ -193,6 +193,77 @@ def render_page(page_num, items, title_text, date_text):
     return img
 
 
+
+# ============================================================
+# v34+ · 手绘贴纸合成（doodle-anim 抓的 PNG 贴到图文上）
+# ============================================================
+def paste_sticker(base_img, sticker_path, position="bottom_right",
+                  size=(180, 180), margin=40):
+    """把 doodle-anim 抓的贴纸合成到图文的空白角落。
+
+    Args:
+        base_img: PIL.Image 对象（page1/page2/page3 的 Image 对象）
+        sticker_path: 贴纸 PNG 绝对路径
+        position: top_left / top_right / bottom_left / bottom_right
+        size: 缩放后大小（page1 角标默认 180x180；page3 装饰 220x80 横长条）
+        margin: 距边缘像素
+
+    Returns:
+        合成后的 PIL.Image
+
+    原理：doodle-anim 的 Canvas 背景是米色 (#efe9d8 等)，PIL 把这些近白
+    米色像素的 alpha 设为 0 → 透明 → 用 paste() 带 mask 参数合成到 base 上
+    """
+    sticker = Image.open(sticker_path).convert("RGBA")
+    sticker = sticker.resize(size, Image.LANCZOS)
+
+    # 米色背景 → 透明
+    pixels = sticker.load()
+    w, h = sticker.size
+    for y in range(h):
+        for x in range(w):
+            r, g, b, a = pixels[x, y]
+            # doodle-anim 几个 template 背景色阈值
+            # mannay: #e7dfd1 (231,223,209)
+            # friends: #f4efe4 (244,239,228)
+            # faces: #efe9d8 (239,233,216)
+            # doodle: #e8e2d2 (232,226,210)
+            if r > 225 and g > 215 and b > 195 and abs(r-g) < 30 and abs(g-b) < 30:
+                pixels[x, y] = (r, g, b, 0)
+
+    # 计算位置
+    bw, bh = base_img.size
+    sw, sh = sticker.size
+    if position == "bottom_right":
+        x, y = bw - sw - margin, bh - sh - margin
+    elif position == "bottom_left":
+        x, y = margin, bh - sh - margin
+    elif position == "top_right":
+        x, y = bw - sw - margin, margin
+    else:  # top_left
+        x, y = margin, margin
+
+    # 边界检查：不超出画布
+    x = max(0, min(x, bw - sw))
+    y = max(0, min(y, bh - sh))
+
+    base_img.paste(sticker, (x, y), sticker)
+    return base_img
+
+
+def render_page_with_sticker(page_num, items, title_text, date_text,
+                             sticker_path=None, sticker_position="bottom_right",
+                             sticker_size=(180, 180)):
+    """v34+ 包装：渲染页面 + 可选贴纸（向后兼容 render_page）。"""
+    img = render_page(page_num, items, title_text, date_text)
+    if sticker_path and os.path.exists(sticker_path):
+        try:
+            img = paste_sticker(img, sticker_path, sticker_position, sticker_size)
+        except Exception as e:
+            print(f"⚠️ 贴纸合成失败: {e}（不影响主图）")
+    return img
+
+
 def main():
     os.makedirs(BASE_DIR, exist_ok=True)
     TITLE = "富人信息差"
