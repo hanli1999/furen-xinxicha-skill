@@ -501,6 +501,158 @@ NEWS = [
 
 ---
 
+## 6.8.1 v20.1 term_note 内容铁律 · 必须是术语=通俗解释（0916 用户反馈确立）
+
+> **Why**：v20 落地时只约束了视觉（底色块+色条+字体），**没有约束 term_note 的内容**。0916 用户原话：「新闻事实中间那条应该是专业术语的注释」——明确要求 term_note 不是"补充短评"而是"术语注解"。
+>
+> 踩坑样本（v20 旧版 term_note 退化为短评）：
+> - "AI 板块今天涨了 3%，值得关注" ❌ 短评，触合规线且跟信号卡重复
+> - "这是个好消息" ❌ 无信息量
+>
+> ✓ 标准格式：term_note = 术语 + `=` / `是` / `指` + 通俗解释（口语化、≤30 字）
+
+### 7 类新闻注解模板
+
+| 类型 | 模板 | 示例 |
+|------|------|------|
+| ① 财经术语 | X = 通俗解释 | 隔夜逆回购=央行在收盘后问银行"要不要借钱过夜" |
+| ② 政策动作 | X 是机构/动作定义 | 国标=国家强制执行的最低技术标准 |
+| ③ 行业概念 | X 指业务/概念 | SAF=可持续航空燃料,用废弃油脂炼的航空煤油 |
+| ④ 监管动作 | X = 监管口径 | 反垄断调查=监管认定某家企业滥用市场地位 |
+| ⑤ 国际机构 | X 是国际组织/机制 | 申根机制=26 国免签互通的边境协议 |
+| ⑥ 经济指标 | X = 数据怎么读 | 核心 CPI=剔掉食品能源后的通胀,看长期趋势 |
+| ⑦ 产业里程碑 | X = 历史意义 | 长鑫 DDR5=国内首款追平国际主流的内存芯片 |
+
+### 硬约束（0917 起每条必查）
+
+1. **必须含 `=` 或 `是` 或 `指`** —— 三选一
+2. **≤30 字**（22pt simsun × news_w 501px 单行能装下）
+3. **禁退化为补充短评** —— 跟信号卡"涨 3%"不能重复
+4. **禁专业术语堆砌** —— 解释必须口语化，普通人能秒懂
+
+### v30_pitfall_check 新增 check_32
+
+```python
+def check_32_v20_1_note_format(items):
+    c = Check("v20.1 term_note 内容铁律（术语=通俗解释 · ≤30 字）")
+    notes = [it[4] for it in items if len(it) >= 5 and it[4]]
+    if not notes:
+        c.pass_("⚠️ 未启用 5 元组 term_note（仍用旧 4 元组），跳过校验")
+        return c
+    bad = []
+    for i, n in enumerate(notes):
+        if not any(k in n for k in ['=', '是', '指']):
+            bad.append(f"#{i+1} 无'='/'是'/'指'")
+        if len(n) > 30:
+            bad.append(f"#{i+1} 超 30 字({len(n)}字)")
+    if bad:
+        c.fail("; ".join(bad))
+    else:
+        c.pass_(f"✓ {len(notes)} 条 term_note 全过：含 = 是 指 + ≤30 字")
+    return c
+```
+
+---
+
+## 6.8.2 v20.2 注解多行完整渲染版 · 禁 "".join 截断 bug（0916 用户反馈修复）
+
+> **Why**：v20 注解加粗版落地时 draw_row() 内部有 BUG：
+> ```python
+> note_lines = wrap_text(note_text, FONT_HEI_TERM, news_w)   # ① 已按宽度换好行
+> full_note  = "".join(note_lines)                            # ② BUG：合并成单行
+> if bbox.width > max_note_w:                                 # ③ 单行测宽超 → 截断+省略号
+>     ...
+> ```
+> 后果：注解超宽（22pt simsun × 23-33 字 > news_w 501px）→ wrap_text 拆 2 行 → `"" .join` 抹掉换行 → 单行测宽 → 触发截断 → 显示 "…"
+>
+> 用户看到的：「为啥有的专业术语注释没显示全」—— 其实是某些 note 末尾被 "…" 截了（0916 NEWS #3 脑机接口 24 字实测截断为 22 字 + 省略号）。
+
+### 4 项硬约束（0917 起每条 NEWS 必跑）
+
+1. **不要 `"".join(note_lines)`** —— 抹掉换行 = 抹掉宽度信息
+2. **直接逐行渲染**：`for line in note_lines: d.text(...)` 而不是单行 full_note
+3. **NOTE_BLOCK_H 动态计算**：
+   ```python
+   NOTE_LINE_H_DYN = 28
+   note_pad_y = 10
+   dynamic_note_h = max(NOTE_BLOCK_H, len(note_lines) * NOTE_LINE_H_DYN + note_pad_y * 2)
+   ```
+4. **note 字段 ≤22 字**（22pt simsun × news_w 501px 单行能装下）；超字数自动换 2 行（NOTE_BLOCK_H 动态扩展）
+
+### draw_row() 标准实现
+
+```python
+def draw_row(img, y_start, idx, news_text, source_text, signal_text, note_text=""):
+    base_h = 80 + 28 + len(news_lines) * NEWS_LINE_H + len(src_lines) * SRC_LINE_H + CARD_PAD * 2
+    if note_text:
+        note_lines = wrap_text(note_text, FONT_HEI_TERM, news_w)   # ① 不 join
+        NOTE_LINE_H_DYN = 28
+        note_pad_y = 10
+        dynamic_note_h = max(NOTE_BLOCK_H, len(note_lines) * NOTE_LINE_H_DYN + note_pad_y * 2)
+        note_gap = 10
+        news_h = base_h + note_gap + dynamic_note_h + 14
+    else:
+        note_lines = []
+        news_h = base_h
+    # ...
+    if note_lines:
+        # 底色块
+        d.rounded_rectangle([blk_x0, blk_y0, blk_x1, blk_y1], radius=10, fill=TERM_BG)
+        d.rectangle([blk_x0+4, blk_y0+6, blk_x0+8, blk_y1-6], fill=TERM_BAR)
+        # ② 逐行渲染（禁 "".join）
+        for line in note_lines:
+            d.text((note_x0 + 16, note_text_y), line, font=FONT_HEI_TERM,
+                   fill=TERM_TEXT, stroke_width=1, stroke_fill=TERM_TEXT_STROKE)
+            note_text_y += NOTE_LINE_H_DYN
+```
+
+### v30_pitfall_check 新增 check_31
+
+```python
+def check_31_v20_2_note_multiline(items):
+    c = Check("v20.2 注解多行完整渲染（无 '\"\" .join' 截断）")
+    if not generate_path or not os.path.exists(generate_path):
+        c.pass_("⚠️ generate.py 路径未传，跳过代码层校验")
+        return c
+    with open(generate_path, 'r', encoding='utf-8') as f:
+        code = f.read()
+    if 'note_lines' not in code:
+        c.fail("❌ draw_row 未保留 note_lines 变量 · 注解块无法多行渲染")
+        return c
+    if re.search(r'["\']["\']?\s*\.join\s*\(\s*note_lines', code):
+        c.fail("❌ 存在 '\"\" .join(note_lines)' 截断 bug")
+        return c
+    if not re.search(r'for\s+line\s+in\s+note_lines', code):
+        c.fail("❌ 缺少 'for line in note_lines' 逐行渲染")
+        return c
+    c.pass_("✓ draw_row 注解块保留 note_lines + 多行迭代 + 无 '\"\" .join' 截断")
+    return c
+```
+
+### 验收
+
+- 浅杏底色块像素高度 < 60px → 单行
+- 60-100px → 2 行
+- 截断会被 OCR 抓到 "…"（立刻打回）
+
+### 实战验证
+
+- 0916 v20.2 修复：`D:\盛喜工效\华鑫\20260916_富人信息差\generate.py:201-204`
+- 修复前 NEWS #3 截断 → 修复后单行完整
+- 修复后块高：page1 (NEWS#1-#3) 76/80/96px（动态扩展）
+- page2 块高：54/69/76/54px（54px 单行 / 69-76px 双行）
+- v30_pitfall_check 32/32 全过
+
+### v20 / v20.1 / v20.2 三层关系
+
+| 层 | 约束 | 落地位置 |
+|----|------|---------|
+| v20 | 视觉强化（底色块+色条+字体） | generate.py · draw_row() |
+| v20.1 | 内容约束（必须是术语注解非短评） | NEWS 5 元组第 5 列 term_note |
+| v20.2 | 渲染约束（多行完整 + 动态块高） | generate.py · draw_row() 注解块渲染逻辑 |
+
+---
+
 ## 6.9 v40-v41 humanizer-zh 自然语言覆写（0914 实战沉淀）
 
 > **Why**：v18-v36 humanizer-zh 跑了 N 轮后**只过滤 AI 模板词**（"延续/升温/溢价/重启/底牌/登顶"），但**没解决"短语罗列"问题**——v39 旧版每条 NEWS 是 30-50 字短语堆砌，**没有主谓宾完整 + 没有因果链 + 没有具体数据**。

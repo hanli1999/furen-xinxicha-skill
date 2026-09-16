@@ -74,6 +74,9 @@ def parse_news_items(generate_path):
                 'term': t[4] if len(t) >= 6 and t[4] is not None else "",
             })
 
+    # 给每条 item 注入 generate.py 路径，供 check_31 代码层校验
+    for it in items:
+        it['_path'] = generate_path
     return title, date_text, items
 
 
@@ -915,6 +918,130 @@ def check_29_v38_report_knowledge_increment(project_dir):
     return c
 
 
+def check_31_v20_2_note_multiline(items):
+    """v20.2 坑：注解多行必须完整渲染（红线 ㊴·0916）
+
+    必查：每条 NEWS 的 term_note 若超宽（> news_w 460px），必须 wrap_text
+    切多行，且代码中**禁止**用 "".join(note_lines) 抹掉换行后单行测宽截断。
+
+    0916 实战踩坑：NEWS #3（24字脑机接口）实测宽 506px > 460px →
+    wrap_text 拆 2 行 → "".join 合并成单行 → 触发截断 + 省略号 →
+    用户看到 "为啥有的专业术语注释没显示全"。
+    """
+    c = Check("31", "v20.2 注解多行完整渲染（无 '\"\" .join' 截断）", "v20.2")
+    generate_path = None
+    for item in items:
+        if isinstance(item, dict) and '_path' in item:
+            generate_path = item['_path']
+            break
+    if generate_path is None:
+        # 没找到路径时跳过（items 已经是 (idx, news, source, signal) 形式）
+        c.pass_("⚠️ 未找到 generate.py 路径，跳过代码层校验")
+        return c
+
+    try:
+        with open(generate_path, 'r', encoding='utf-8') as f:
+            code = f.read()
+    except Exception as e:
+        c.fail(f"❌ 无法读取 generate.py: {e}")
+        return c
+
+    # 抓 draw_row 函数体
+    if 'def draw_row' not in code:
+        c.pass_("⚠️ generate.py 未找到 draw_row 函数，跳过")
+        return c
+
+    # 抽取 draw_row 函数体（简化版：找到 def 行到下一个 def 行）
+    drow_start = code.find('def draw_row')
+    next_def = code.find('\ndef ', drow_start + 1)
+    if next_def == -1:
+        drow_body = code[drow_start:]
+    else:
+        drow_body = code[drow_start:next_def]
+
+    # 检查 1：代码中必须保留 note_lines（v20.2 多行渲染的核心）
+    if 'note_lines' not in drow_body:
+        c.fail("❌ draw_row 未保留 note_lines 变量 · 注解块无法多行渲染")
+        return c
+
+    # 检查 2：迭代渲染必须有 "for line in note_lines" 或等价循环
+    has_multiline_loop = bool(
+        re.search(r'for\s+\w+\s+in\s+note_lines', drow_body) or
+        re.search(r'for\s+\w+\s+in\s+wrap_text\(note', drow_body)
+    )
+    if not has_multiline_loop:
+        c.fail("❌ draw_row 未按行迭代 note_lines · 注解块可能单行截断")
+        return c
+
+    # 检查 3（关键）：禁止 ' .join(note_lines) 截断合并
+    if re.search(r'["\']["\']?\s*\.join\s*\(\s*note_lines', drow_body):
+        c.fail("❌ draw_row 用了 '\"\" .join(note_lines)' 合并 · v20.2 禁止此模式")
+        return c
+
+    c.pass_("✓ draw_row 注解块保留 note_lines + 多行迭代 + 无 '\"\" .join' 截断")
+    return c
+
+
+def check_32_v20_1_note_format(items):
+    """v20.1 坑：term_note 内容必须是术语注解非短评（红线 ㊵·0916）
+
+    校验：
+    1. 5 元组 NEWS 的 term_note 含「=」或「是」/「指」等口语化连接词 → ✅ 术语解释
+    2. term_note ≤ 30 字（一行能装下）
+    3. 7 条全有 term_note（旧 4 元组兼容场景跳过）
+
+    0916 实战：note 必须 = 术语口语化解释（含 = / 是 / 指），不能写成
+    "六周连涨,中东一打喷嚏油价就窜" 这种补充短评。
+    """
+    c = Check("32", "v20.1 term_note 内容铁律（术语=通俗解释 · ≤30 字）", "v20.1")
+    notes = []
+    legacy_count = 0
+    for item in items:
+        if isinstance(item, dict):
+            # parse_news_items 返回的 dict 形式
+            term = item.get('term', '')
+            if term:
+                notes.append(term)
+            else:
+                legacy_count += 1
+            continue
+        # tuple 形式
+        if len(item) == 5:
+            notes.append(item[4])
+        else:
+            legacy_count += 1
+
+    if not notes:
+        c.pass_("⚠️ 未启用 5 元组 term_note（仍用旧 4 元组），跳过校验")
+        return c
+
+    bad_format = []
+    too_long = []
+    for n in notes:
+        # 必须含连接词：= / 是 / 指 / 通俗 / 简称 / 全称 / 即 / 全称 / 俗称
+        if not re.search(r'[=是指]', n):
+            bad_format.append(n)
+        if len(n) > 30:
+            too_long.append(n)
+
+    errors = []
+    if bad_format:
+        errors.append(f"❌ {len(bad_format)} 条 note 不像术语注解（缺 = / 是 / 指）: "
+                      + " | ".join(bad_format[:2]))
+    if too_long:
+        errors.append(f"❌ {len(too_long)} 条 note 超 30 字（建议一行能装下）: "
+                      + " | ".join(f"{n[:25]}..." for n in too_long[:2]))
+    if legacy_count > 0:
+        errors.append(f"⚠️ {legacy_count} 条仍用旧 4 元组（建议升级 5 元组加 term_note）")
+
+    if errors:
+        c.fail("\n   ".join(errors))
+        return c
+
+    c.pass_(f"✓ {len(notes)} 条 term_note 全过：含 = 是 指 + ≤30 字")
+    return c
+
+
 def check_30_v38_fix_three_steps(project_dir):
     """v38 坑：修复必须三步全做（红线 ㉚·0905）
 
@@ -1036,6 +1163,9 @@ def run_all_checks(project_dir):
         check_28_v38_depth2_counter_data(v32_data, page3_path),
         check_29_v38_report_knowledge_increment(project_dir),
         check_30_v38_fix_three_steps(project_dir),
+        # v20.2 注解多行完整渲染版（0916 实战）
+        check_31_v20_2_note_multiline(items),
+        check_32_v20_1_note_format(items),
     ]
 
     print(f"\n{'='*60}")

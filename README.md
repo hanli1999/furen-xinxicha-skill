@@ -1,5 +1,43 @@
 # 富人信息差 · 小红书图文笔记 Skill
 
+## v2.5.0 升级（增量 · 2026-09-16）
+
+**v40 → v20.1 + v20.2 三层强化** —— 0916 用户两条反馈沉淀：
+1. **「新闻事实中间那条应该是专业术语的注释」** → v20.1 内容铁律：term_note 必须是 `X=通俗解释` 格式（含 =/是/指），禁退化为补充短评
+2. **「为啥有的专业术语注释没显示全」** → v20.2 渲染铁律：禁 `"".join(note_lines)` 截断，改为逐行迭代 + 动态 NOTE_BLOCK_H
+
+| 文件 | 类型 | 说明 |
+|------|------|------|
+| `SKILL.md` §6.8.1 | 新增 | v20.1 term_note 内容铁律 + 7 类模板 + check_32 |
+| `SKILL.md` §6.8.2 | 新增 | v20.2 多行完整渲染 + draw_row 标准实现 + check_31 |
+| `generate.py` | 升级 | `_unpack(item)` helper 兼容 4 元组 + `NOTE_LINE_H_DYN` 动态块高 + `for line in note_lines` 多行渲染 |
+| `assets/v30_pitfall_check.py` | 升级 | check_31 (v20.2 渲染) + check_32 (v20.1 内容) + `c.skip` → `c.pass_` 全替换 |
+
+**v20.1 vs v20.2 关系**：
+
+| 层 | 约束 | 落地 |
+|----|------|------|
+| v20 | 视觉强化（底色块+色条+字体） | generate.py · draw_row() |
+| v20.1 | 内容约束（必须是术语注解非短评） | NEWS 5 元组第 5 列 term_note |
+| v20.2 | 渲染约束（多行完整 + 动态块高） | generate.py · 注解块渲染逻辑 |
+
+**v20.2 关键 bug**（0916 用户反馈「有的术语注释没显示全」根因）：
+```python
+# 旧版 BUG：合并单行测宽 → 超宽 → 截断+省略号
+note_lines = wrap_text(note_text, ...)   # ① 拆好行
+full_note  = "".join(note_lines)          # ② 抹掉换行
+if bbox.width > max_note_w:              # ③ 触发截断
+    full_note = full_note[:cut] + "…"
+```
+
+修复 = 禁 join + 逐行渲染 + NOTE_BLOCK_H 动态扩展（单行 60px / 双行 88px / 三行 116px 自动撑高）。
+
+**v20.1 7 类模板**：① 财经术语 ② 政策动作 ③ 行业概念 ④ 监管动作 ⑤ 国际机构 ⑥ 经济指标 ⑦ 产业里程碑。
+
+**v30_pitfall_check 验证**：32/32 全过（含 check_31 + check_32 两条新检查）。
+
+---
+
 > 每日 7 条新闻速览 + 干货认知包，纯 PIL 离线生成，零外部依赖。
 
 ![三件套预览](assets/preview.png)
