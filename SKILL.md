@@ -1104,6 +1104,70 @@ def v26_no_duplicate_check(page3_data):
 
 ---
 
+## 15.5 案件管家联动（case-manager · v42 补全 · 11 段框架对齐）
+
+> 11 段是 skill-explainer 强制约定，本 skill 自定义 v28 结构（16 段）缺段 11，按 11 段对齐补全。
+
+### 联动策略
+
+| 情形 | 是否联动 | 处理 |
+|------|----------|------|
+| 用户当前有激活案件（`matters/{slug}/matter.md` 存在） | ✅ 必须联动 | 产出报告末尾追加"案件回写提示"，询问用户是否登记 |
+| 用户无激活案件（普通跑日） | ✅ 默认联动 | 仅在报告末尾写一行"是否登记到台账？待用户确认" |
+| 用户明确说"这次别登记" | ❌ 不联动 | 尊重用户，跳过提示 |
+
+### 联动协议（与现有 skill 一致）
+
+- **协议单一来源**：`skills/case-manager/references/downstream-writeback-protocol.md`
+- **入口插槽**：`/case-manager` SKILL.md §0.7
+- **本 skill 的产出**：5 张 PNG + 1 份数据核对报告，登记时由 case-manager 提取以下字段：
+
+| 字段 | 来源 | 示例 |
+|------|------|------|
+| `matter_type` | 固定 | `理财分析` |
+| `news_count` | 7 条固定 | `7` |
+| `categories` | 5 类覆盖 | `[国际×3, 科技×2, 经济×1, 民生×1]` |
+| `output_files` | 实际渲染 | `[page1.png, page1_v2.png, page2.png, page2_v2.png, page3.png]` |
+| `data_check_report` | §16 跑前必查产物 | `data_check_20260916.md` |
+| `run_date` | 当日日期 | `2026-09-16` |
+
+### 挂载路径
+
+```
+matters/{YYYYMMDD}_富人信息差/
+├── matter.md                    ← 案件主文档（由 case-manager 创建）
+├── outputs/
+│   ├── page1.png
+│   ├── page1_v2.png
+│   ├── page2.png
+│   ├── page2_v2.png
+│   ├── page3.png
+│   └── data_check_YYYYMMDD.md
+└── audit.json                   ← 跑前必查 32 项踩坑核查结果
+```
+
+### 触发逻辑
+
+1. 检测 `matters/{slug}/matter.md` 是否存在
+2. 存在 → 报告末尾挂联动块 + 询问用户是否登记
+3. 不存在 → 报告末尾仅一行"是否登记到台账？待用户确认"
+4. 用户答"是" → 调 case-manager 写入
+5. 用户答"否" → 跳过，不影响本次出图
+
+### 辅助用途
+
+理财分析类案件可作为**时间锚定的素材引用**——例如：
+- 客户咨询"AI 自保"议题 → 引用 2026-09-16 page3 AI 也学会自保
+- 客户咨询"加息尾声" → 引用 2026-09-16 page1 加息尾声还是中继
+
+### 为什么保留这段
+
+- 11 段是 skill-explainer 强制约定，照写不偷懒
+- 即便今天不联动，明天用户可能要把它纳入案件工作流
+- 提前留好插槽，比临时补要省事
+
+---
+
 ## 16. 跑前必查清单（v28 · 老板 review 用）
 
 ### 16.1 跑前 · 6 项必查
